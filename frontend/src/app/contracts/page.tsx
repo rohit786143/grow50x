@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { CONTRACT_ADDRESSES, BSC_TESTNET_CHAIN_ID } from '@/config/contracts';
+import { CONTRACT_ADDRESSES, BSC_TESTNET_CHAIN_ID } from '../../config/contracts';
 
 export default function ContractsPage() {
   return (

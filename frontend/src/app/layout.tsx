@@ -1,6 +1,7 @@
 import './globals.css';
 import React from 'react';
 import Link from 'next/link';
+import WalletConnect from '../components/WalletConnect';
 
 export const metadata = {
   title: 'GROW 50X - Decentralized Web3 Protocol',
@@ -36,12 +37,7 @@ export default function RootLayout({
             </nav>
 
             <div className="flex items-center gap-3">
-              <button 
-                id="connect-wallet-btn"
-                className="gradient-btn px-4 py-2 rounded-xl text-slate-950 font-semibold text-sm shadow-md hover:scale-105 transition-transform"
-              >
-                Connect Wallet
-              </button>
+              <WalletConnect />
             </div>
           </div>
         </header>
