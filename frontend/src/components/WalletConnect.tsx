@@ -3,11 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { CONTRACT_ADDRESSES, MOCK_USDT_ABI, GROW50X_CORE_ABI, BSC_TESTNET_CHAIN_ID } from '../config/contracts';
 
 export default function WalletConnect() {
+  const router = useRouter();
   const [account, setAccount] = useState<string | null>(null);
-  const [isRegistered, setIsRegistered] = useState<boolean>(false);
+  const [isRegistered, setIsRegistered] = useState<boolean>(true);
   const [usdtBalance, setUsdtBalance] = useState<string>('0');
   const [bnbBalance, setBnbBalance] = useState<string>('0');
   const [chainId, setChainId] = useState<number | null>(null);
@@ -17,65 +19,23 @@ export default function WalletConnect() {
   const BSC_TESTNET_HEX_CHAIN_ID = '0x61'; // 97 in decimal
 
   useEffect(() => {
-    checkConnection();
-
     if (typeof window !== 'undefined' && (window as any).ethereum) {
       const ethereum = (window as any).ethereum;
 
       ethereum.on('accountsChanged', (accounts: string[]) => {
-        if (accounts.length > 0) {
-          setAccount(accounts[0]);
-          fetchBalances(accounts[0]);
-          checkRegistration(accounts[0]);
-        } else {
-          setAccount(null);
-          setUsdtBalance('0');
-          setBnbBalance('0');
-          setIsRegistered(false);
-        }
+        // When switching wallets in MetaMask, require clicking Connect Wallet
+        setAccount(null);
+        setIsRegistered(false);
+        setUsdtBalance('0');
+        setBnbBalance('0');
       });
 
       ethereum.on('chainChanged', (_chainIdHex: string) => {
         const id = parseInt(_chainIdHex, 16);
         setChainId(id);
-        if (account) {
-          fetchBalances(account);
-          checkRegistration(account);
-        }
       });
     }
   }, []);
-
-  const checkConnection = async () => {
-    if (typeof window !== 'undefined' && (window as any).ethereum) {
-      try {
-        const provider = new ethers.BrowserProvider((window as any).ethereum);
-        const network = await provider.getNetwork();
-        setChainId(Number(network.chainId));
-
-        const accounts = await provider.send('eth_accounts', []);
-        if (accounts.length > 0) {
-          setAccount(accounts[0]);
-          await fetchBalances(accounts[0]);
-          await checkRegistration(accounts[0]);
-        }
-      } catch (err) {
-        console.error('Error checking wallet connection:', err);
-      }
-    }
-  };
-
-  const checkRegistration = async (walletAddress: string) => {
-    try {
-      if (typeof window === 'undefined' || !(window as any).ethereum) return;
-      const provider = new ethers.BrowserProvider((window as any).ethereum);
-      const coreContract = new ethers.Contract(CONTRACT_ADDRESSES.GROW50X_CORE, GROW50X_CORE_ABI, provider);
-      const mId = await coreContract.walletToMainUserId(walletAddress);
-      setIsRegistered(Number(mId) > 0);
-    } catch (err) {
-      console.error('Error checking registration:', err);
-    }
-  };
 
   const fetchBalances = async (walletAddress: string) => {
     try {
@@ -94,6 +54,21 @@ export default function WalletConnect() {
     }
   };
 
+  const checkRegistration = async (walletAddress: string) => {
+    try {
+      if (typeof window === 'undefined' || !(window as any).ethereum) return false;
+      const provider = new ethers.BrowserProvider((window as any).ethereum);
+      const coreContract = new ethers.Contract(CONTRACT_ADDRESSES.GROW50X_CORE, GROW50X_CORE_ABI, provider);
+      const mId = await coreContract.walletToMainUserId(walletAddress);
+      const registered = Number(mId) > 0;
+      setIsRegistered(registered);
+      return registered;
+    } catch (err) {
+      console.error('Error checking registration:', err);
+      return false;
+    }
+  };
+
   const connectWallet = async () => {
     if (typeof window === 'undefined' || !(window as any).ethereum) {
       alert('MetaMask or Web3 Wallet not detected. Please install MetaMask extension.');
@@ -106,7 +81,8 @@ export default function WalletConnect() {
       const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
 
       if (accounts.length > 0) {
-        setAccount(accounts[0]);
+        const wallet = accounts[0];
+        setAccount(wallet);
 
         const provider = new ethers.BrowserProvider(ethereum);
         const network = await provider.getNetwork();
@@ -117,8 +93,13 @@ export default function WalletConnect() {
           await switchNetwork();
         }
 
-        await fetchBalances(accounts[0]);
-        await checkRegistration(accounts[0]);
+        await fetchBalances(wallet);
+        const registered = await checkRegistration(wallet);
+
+        // If newly connected wallet is not registered, automatically redirect to /register!
+        if (!registered) {
+          router.push('/register');
+        }
       }
     } catch (err: any) {
       console.error('Wallet connection error:', err);
