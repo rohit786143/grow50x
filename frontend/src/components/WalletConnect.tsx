@@ -7,7 +7,7 @@ import { CONTRACT_ADDRESSES, MOCK_USDT_ABI, GROW50X_CORE_ABI, BSC_TESTNET_CHAIN_
 
 export default function WalletConnect() {
   const [account, setAccount] = useState<string | null>(null);
-  const [isRegistered, setIsRegistered] = useState<boolean>(true);
+  const [isRegistered, setIsRegistered] = useState<boolean>(false);
   const [usdtBalance, setUsdtBalance] = useState<string>('0');
   const [bnbBalance, setBnbBalance] = useState<string>('0');
   const [chainId, setChainId] = useState<number | null>(null);
@@ -31,6 +31,7 @@ export default function WalletConnect() {
           setAccount(null);
           setUsdtBalance('0');
           setBnbBalance('0');
+          setIsRegistered(false);
         }
       });
 
@@ -95,7 +96,7 @@ export default function WalletConnect() {
 
   const connectWallet = async () => {
     if (typeof window === 'undefined' || !(window as any).ethereum) {
-      alert('MetaMask or Web3 Wallet not detected. Please install MetaMask extensions.');
+      alert('MetaMask or Web3 Wallet not detected. Please install MetaMask extension.');
       return;
     }
 
@@ -167,7 +168,6 @@ export default function WalletConnect() {
       const usdtContract = new ethers.Contract(CONTRACT_ADDRESSES.USDT, MOCK_USDT_ABI, signer);
 
       const tx = await usdtContract.faucet();
-      console.log('Faucet TX sent:', tx.hash);
       await tx.wait();
       alert('🎉 1,000 Mock USDT successfully minted to your wallet!');
 
@@ -211,9 +211,9 @@ export default function WalletConnect() {
         onClick={connectWallet}
         disabled={isConnecting}
         id="connect-wallet-btn"
-        className="gradient-btn px-5 py-2.5 rounded-xl text-slate-950 font-bold text-sm shadow-md hover:scale-105 transition-transform flex items-center gap-2"
+        className="btn-primary-blue px-5 py-2.5 rounded-xl font-bold text-sm shadow-md flex items-center gap-2"
       >
-        <span className="w-2 h-2 rounded-full bg-cyan-950 animate-ping" />
+        <span className="w-2 h-2 rounded-full bg-white animate-ping" />
         {isConnecting ? 'Connecting...' : 'Connect Wallet'}
       </button>
     );
@@ -223,11 +223,11 @@ export default function WalletConnect() {
 
   return (
     <div className="flex flex-wrap items-center gap-3">
-      {/* If connected wallet is not registered, show Register Now button */}
+      {/* Show Register Button ONLY IF NOT REGISTERED */}
       {!isRegistered && (
         <Link
           href="/register"
-          className="bg-gradient-to-r from-amber-500 to-cyan-500 text-slate-950 font-extrabold px-3.5 py-1.5 rounded-xl text-xs shadow-lg animate-pulse hover:scale-105 transition-transform flex items-center gap-1.5"
+          className="btn-primary-emerald font-extrabold px-4 py-2 rounded-xl text-xs shadow-md animate-pulse flex items-center gap-1.5"
         >
           <span>🚀</span> Register Now
         </Link>
@@ -237,7 +237,7 @@ export default function WalletConnect() {
       <button
         onClick={claimFaucetUsdt}
         disabled={isClaimingFaucet}
-        className="bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold px-3 py-1.5 rounded-xl text-xs shadow-md transition-transform flex items-center gap-1.5"
+        className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold px-3 py-1.5 rounded-xl text-xs border border-emerald-200 transition-colors flex items-center gap-1.5"
         title="Claim 1,000 Free Testnet USDT"
       >
         <span>🎁</span>
@@ -246,7 +246,7 @@ export default function WalletConnect() {
 
       <button
         onClick={addUsdtToMetaMask}
-        className="bg-slate-800 hover:bg-slate-700 text-cyan-400 font-semibold px-2.5 py-1.5 rounded-xl text-xs border border-slate-700 transition-colors"
+        className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-2.5 py-1.5 rounded-xl text-xs border border-slate-200 transition-colors"
         title="Import USDT Token into MetaMask"
       >
         ➕ Add to MetaMask
@@ -255,20 +255,21 @@ export default function WalletConnect() {
       {isWrongNetwork ? (
         <button
           onClick={switchNetwork}
-          className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs transition-colors"
+          className="bg-amber-500 hover:bg-amber-600 text-white font-bold px-4 py-2 rounded-xl text-xs transition-colors"
         >
           ⚠️ Switch to BSC Testnet
         </button>
       ) : (
-        <div className="flex items-center gap-2 bg-slate-900/90 px-3.5 py-1.5 rounded-xl border border-slate-800 text-xs">
-          <span className="text-emerald-400 font-semibold">${usdtBalance} USDT</span>
-          <span className="text-slate-500">|</span>
-          <span className="text-slate-300 font-mono">{bnbBalance} BNB</span>
+        <div className="flex items-center gap-2 bg-slate-50 px-3.5 py-1.5 rounded-xl border border-slate-200 text-xs">
+          <span className="text-emerald-600 font-bold">${usdtBalance} USDT</span>
+          <span className="text-slate-300">|</span>
+          <span className="text-slate-600 font-mono font-semibold">{bnbBalance} BNB</span>
         </div>
       )}
 
-      <div className="flex items-center gap-2 bg-slate-900 px-3.5 py-2 rounded-xl border border-slate-700/80 text-xs font-mono font-semibold text-cyan-400">
-        <span className="w-2 h-2 rounded-full bg-emerald-400" />
+      {/* Connected Wallet Badge */}
+      <div className="flex items-center gap-2 bg-sky-50 px-3.5 py-2 rounded-xl border border-sky-200 text-xs font-mono font-bold text-sky-700">
+        <span className="w-2 h-2 rounded-full bg-emerald-500" />
         {formatAddress(account)}
       </div>
     </div>
