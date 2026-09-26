@@ -86,9 +86,9 @@ describe("GROW 50X Protocol Unit & Integration Tests", function () {
       // Verification of sponsor dropdown on-chain security check
     });
 
-    it("Should reject batch sizes greater than 20", async function () {
-      await expect(core.connect(user1).createBatchSubIds(21)).to.be.revertedWith(
-        "Batch count must be 1 to 20"
+    it("Should reject batch sizes greater than 5", async function () {
+      await expect(core.connect(user1).createBatchSubIds(6)).to.be.revertedWith(
+        "Batch count must be 1 to 5"
       );
     });
   });

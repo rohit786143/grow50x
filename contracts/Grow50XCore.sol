@@ -159,7 +159,7 @@ contract Grow50XCore is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Ownable 
      * @param count Number of Sub-IDs to create (1 to 20).
      */
     function createBatchSubIds(uint256 count) external nonReentrant {
-        require(count >= 1 && count <= 20, "Batch count must be 1 to 20");
+        require(count >= 1 && count <= 5, "Batch count must be 1 to 5");
         uint256 mainUserId = walletToMainUserId[msg.sender];
         require(mainUserId != 0, "Main User registration required");
 
@@ -555,9 +555,12 @@ contract Grow50XCore is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Ownable 
     function finalizeSharePeriod() external nonReentrant {
         require(block.timestamp >= currentPeriodStart + PERIOD_DURATION, "Period duration not reached");
         require(sharePoolBalance > 0, "No pool balance to distribute");
+        _finalizeSharePeriodInternal();
+    }
 
+    function _finalizeSharePeriodInternal() internal {
         uint256 totalShares = _calculateTotalEligibleShares();
-        require(totalShares > 0, "No eligible shares");
+        if (totalShares == 0 || sharePoolBalance == 0) return;
 
         uint256 poolAmount = sharePoolBalance;
         sharePoolBalance = 0; // Reset balance for next epoch
@@ -576,11 +579,16 @@ contract Grow50XCore is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Ownable 
 
     /**
      * @notice Allows eligible users to claim pending Share Pool income.
-     * Enforces the non-resetting lifetime share-income cumulative cap.
+     * Enforces lazy auto-finalization and the non-resetting lifetime share-income cumulative cap.
      */
     function claimShareIncome(uint256 userId) external nonReentrant {
         require(users[userId].active, "User not active");
         require(users[userId].wallet == msg.sender, "Caller not authorized owner");
+
+        // Lazy Auto-Finalize 10-day period if duration has elapsed
+        if (block.timestamp >= currentPeriodStart + PERIOD_DURATION && sharePoolBalance > 0) {
+            _finalizeSharePeriodInternal();
+        }
 
         uint256 userShares = getShareMultiplier(users[userId].currentBoard);
         require(userShares > 0, "No shares for user");
