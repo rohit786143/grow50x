@@ -2,10 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
-import { CONTRACT_ADDRESSES, MOCK_USDT_ABI, BSC_TESTNET_CHAIN_ID } from '../config/contracts';
+import Link from 'next/link';
+import { CONTRACT_ADDRESSES, MOCK_USDT_ABI, GROW50X_CORE_ABI, BSC_TESTNET_CHAIN_ID } from '../config/contracts';
 
 export default function WalletConnect() {
   const [account, setAccount] = useState<string | null>(null);
+  const [isRegistered, setIsRegistered] = useState<boolean>(true);
   const [usdtBalance, setUsdtBalance] = useState<string>('0');
   const [bnbBalance, setBnbBalance] = useState<string>('0');
   const [chainId, setChainId] = useState<number | null>(null);
@@ -24,6 +26,7 @@ export default function WalletConnect() {
         if (accounts.length > 0) {
           setAccount(accounts[0]);
           fetchBalances(accounts[0]);
+          checkRegistration(accounts[0]);
         } else {
           setAccount(null);
           setUsdtBalance('0');
@@ -34,7 +37,10 @@ export default function WalletConnect() {
       ethereum.on('chainChanged', (_chainIdHex: string) => {
         const id = parseInt(_chainIdHex, 16);
         setChainId(id);
-        if (account) fetchBalances(account);
+        if (account) {
+          fetchBalances(account);
+          checkRegistration(account);
+        }
       });
     }
   }, []);
@@ -50,10 +56,23 @@ export default function WalletConnect() {
         if (accounts.length > 0) {
           setAccount(accounts[0]);
           await fetchBalances(accounts[0]);
+          await checkRegistration(accounts[0]);
         }
       } catch (err) {
         console.error('Error checking wallet connection:', err);
       }
+    }
+  };
+
+  const checkRegistration = async (walletAddress: string) => {
+    try {
+      if (typeof window === 'undefined' || !(window as any).ethereum) return;
+      const provider = new ethers.BrowserProvider((window as any).ethereum);
+      const coreContract = new ethers.Contract(CONTRACT_ADDRESSES.GROW50X_CORE, GROW50X_CORE_ABI, provider);
+      const mId = await coreContract.walletToMainUserId(walletAddress);
+      setIsRegistered(Number(mId) > 0);
+    } catch (err) {
+      console.error('Error checking registration:', err);
     }
   };
 
@@ -62,11 +81,9 @@ export default function WalletConnect() {
       if (typeof window === 'undefined' || !(window as any).ethereum) return;
       const provider = new ethers.BrowserProvider((window as any).ethereum);
 
-      // Fetch BNB Balance
       const bnbRaw = await provider.getBalance(walletAddress);
       setBnbBalance(parseFloat(ethers.formatEther(bnbRaw)).toFixed(4));
 
-      // Fetch USDT Balance
       const usdtContract = new ethers.Contract(CONTRACT_ADDRESSES.USDT, MOCK_USDT_ABI, provider);
       const usdtRaw = await usdtContract.balanceOf(walletAddress);
       const decimals = await usdtContract.decimals();
@@ -100,6 +117,7 @@ export default function WalletConnect() {
         }
 
         await fetchBalances(accounts[0]);
+        await checkRegistration(accounts[0]);
       }
     } catch (err: any) {
       console.error('Wallet connection error:', err);
@@ -140,7 +158,6 @@ export default function WalletConnect() {
     }
   };
 
-  // Claim 1,000 Testnet USDT from MockUSDT Faucet
   const claimFaucetUsdt = async () => {
     if (typeof window === 'undefined' || !(window as any).ethereum || !account) return;
     setIsClaimingFaucet(true);
@@ -164,7 +181,6 @@ export default function WalletConnect() {
     }
   };
 
-  // Prompt MetaMask to import the Mock USDT Token
   const addUsdtToMetaMask = async () => {
     if (typeof window === 'undefined' || !(window as any).ethereum) return;
     try {
@@ -207,6 +223,16 @@ export default function WalletConnect() {
 
   return (
     <div className="flex flex-wrap items-center gap-3">
+      {/* If connected wallet is not registered, show Register Now button */}
+      {!isRegistered && (
+        <Link
+          href="/register"
+          className="bg-gradient-to-r from-amber-500 to-cyan-500 text-slate-950 font-extrabold px-3.5 py-1.5 rounded-xl text-xs shadow-lg animate-pulse hover:scale-105 transition-transform flex items-center gap-1.5"
+        >
+          <span>🚀</span> Register Now
+        </Link>
+      )}
+
       {/* Faucet & Import Tokens Buttons */}
       <button
         onClick={claimFaucetUsdt}

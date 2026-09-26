@@ -28,6 +28,7 @@ export default function RootLayout({
 
             <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-300">
               <Link href="/" className="hover:text-cyan-400 transition-colors">Home</Link>
+              <Link href="/register" className="text-cyan-400 font-bold hover:underline">Register</Link>
               <Link href="/dashboard" className="hover:text-cyan-400 transition-colors">Dashboard</Link>
               <Link href="/boards" className="hover:text-cyan-400 transition-colors">Boards</Link>
               <Link href="/sub-ids" className="hover:text-cyan-400 transition-colors">Sub-IDs</Link>
