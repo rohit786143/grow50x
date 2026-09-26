@@ -20,10 +20,10 @@ async function main() {
   const usdtAddress = await usdt.getAddress();
   console.log(">>> MockUSDT deployed at:", usdtAddress);
 
-  // Define Admin Wallets for 5% splits
-  const admin1 = process.env.ADMIN_WALLET_1 || deployer.address;
-  const admin2 = process.env.ADMIN_WALLET_2 || deployer.address;
-  const admin3 = process.env.ADMIN_WALLET_3 || deployer.address;
+  // Define Official Admin Wallets for 5% splits
+  const admin1 = process.env.ADMIN_WALLET_1 || "0x7D27949028D8c8532728c69fF2153Ee6Bb3bF82e";
+  const admin2 = process.env.ADMIN_WALLET_2 || "0x7A3FC2c5610F0962Dd5927a4f7397aE060B79d68";
+  const admin3 = process.env.ADMIN_WALLET_3 || "0x2B255ED42530Cb531CbDaB4C4Df23Eb408fB748B";
 
   // 2. Deploy Grow50XCore
   console.log("\n[2/3] Deploying Grow50XCore protocol contract...");

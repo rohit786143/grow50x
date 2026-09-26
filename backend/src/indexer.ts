@@ -1,5 +1,5 @@
 import { ethers } from "ethers";
-import express from "express";
+import express, { Request, Response } from "express";
 import * as dotenv from "dotenv";
 
 dotenv.config();
@@ -32,26 +32,26 @@ async function startIndexer() {
   console.log("Listening for events on contract:", CORE_CONTRACT_ADDRESS);
 
   // 1. Listen for UserRegistered events
-  contract.on("UserRegistered", (id, wallet, ownerMainUserId, sponsorId, placementParentId, isSubId, timestamp, event) => {
+  contract.on("UserRegistered", (id, wallet, ownerMainUserId, sponsorId, placementParentId, isSubId, timestamp) => {
     console.log(`[Event: UserRegistered] ID: ${id.toString()} | Wallet: ${wallet} | Sponsor: ${sponsorId.toString()} | SubID: ${isSubId}`);
   });
 
   // 2. Listen for DirectCommissionPaid events
-  contract.on("DirectCommissionPaid", (sponsorId, sponsorWallet, amount, event) => {
+  contract.on("DirectCommissionPaid", (sponsorId, sponsorWallet, amount) => {
     console.log(`[Event: DirectCommissionPaid] Sponsor ID: ${sponsorId.toString()} | Amount: ${ethers.formatEther(amount)} USDT`);
   });
 
   // 3. Listen for BoardCompleted events
-  contract.on("BoardCompleted", (boardId, boardLevel, topId, event) => {
+  contract.on("BoardCompleted", (boardId, boardLevel, topId) => {
     console.log(`[Event: BoardCompleted] Board Unit: ${boardId.toString()} | Level: ${boardLevel} | Top ID: ${topId.toString()}`);
   });
 
   // REST API Endpoints for Cached Analytics
-  app.get("/api/health", (req, res) => {
+  app.get("/api/health", (req: Request, res: Response) => {
     res.json({ status: "healthy", contract: CORE_CONTRACT_ADDRESS, network: "BNB Smart Chain Testnet" });
   });
 
-  app.post("/api/resync", async (req, res) => {
+  app.post("/api/resync", async (req: Request, res: Response) => {
     console.log("[Re-sync] Rebuilding database state from blockchain logs...");
     res.json({ status: "success", message: "Database re-sync initiated from genesis block" });
   });

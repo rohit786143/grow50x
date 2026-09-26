@@ -92,8 +92,12 @@ contract Grow50XCore is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Ownable 
      */
     function registerMainUser(uint256 sponsorId, uint256 manualPlacementId) external nonReentrant {
         require(walletToMainUserId[msg.sender] == 0, "Wallet already registered as Main User");
-        require(sponsorId > 0 && sponsorId <= totalUserCount, "Invalid Sponsor ID");
-        require(users[sponsorId].active, "Sponsor ID not active");
+        if (totalUserCount == 0) {
+            require(sponsorId == 0 || sponsorId == 1, "Root user sponsorId must be 0 or 1");
+        } else {
+            require(sponsorId > 0 && sponsorId <= totalUserCount, "Invalid Sponsor ID");
+            require(users[sponsorId].active, "Sponsor ID not active");
+        }
 
         // Transfer 100 USDT entry fee
         usdtToken.safeTransferFrom(msg.sender, address(this), ENTRY_FEE);
@@ -238,10 +242,12 @@ contract Grow50XCore is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Ownable 
      * @notice Distributes $100 entry fee according to protocol allocation rules.
      */
     function _distributeEntryFee(uint256 sponsorId) internal {
-        address sponsorWallet = users[sponsorId].wallet;
+        address sponsorWallet = (sponsorId != 0 && users[sponsorId].wallet != address(0)) ? users[sponsorId].wallet : adminWallet1;
         
         // 40% Direct Sponsor
-        userIncomes[sponsorId].directIncome += SPONSOR_FEE;
+        if (sponsorId != 0) {
+            userIncomes[sponsorId].directIncome += SPONSOR_FEE;
+        }
         usdtToken.safeTransfer(sponsorWallet, SPONSOR_FEE);
         emit DirectCommissionPaid(sponsorId, sponsorWallet, SPONSOR_FEE);
 
