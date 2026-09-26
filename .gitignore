@@ -1,0 +1,13 @@
+node_modules/
+dist/
+cache/
+artifacts/
+typechain-types/
+.next/
+out/
+.env
+.env.local
+coverage/
+coverage.json
+*.log
+deployments/deployment-addresses-mainnet.json

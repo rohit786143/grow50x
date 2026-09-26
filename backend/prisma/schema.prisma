@@ -1,0 +1,76 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  internalId      BigInt   @id
+  wallet          String   @unique
+  ownerMainUserId BigInt
+  sponsorId       BigInt
+  placementParent BigInt?
+  currentBoard    Int      @default(1)
+  directCount     Int      @default(0)
+  active          Boolean  @default(true)
+  isSubId         Boolean  @default(false)
+  createdAt       DateTime @default(now())
+
+  income          Income?
+}
+
+model Income {
+  userId               BigInt   @id
+  user                 User     @relation(fields: [userId], references: [internalId])
+  directIncome         Decimal  @default(0)
+  shareIncome          Decimal  @default(0)
+  levelIncome          Decimal  @default(0)
+  boardRewards         Decimal  @default(0)
+  lifetimeShareEarned  Decimal  @default(0)
+}
+
+model BoardUnit {
+  boardId    BigInt   @id
+  boardLevel Int
+  topId      BigInt
+  positions  String   // JSON string array of 7 position IDs
+  filledCount Int
+  completed  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+}
+
+model BoardCycle {
+  cycleId     BigInt   @id
+  userId      BigInt
+  wallet      String
+  completedAt DateTime @default(now())
+}
+
+model IncomeEvent {
+  id              String   @id @default(uuid())
+  txHash          String
+  eventType       String   // Direct, Share, Level, BoardReward
+  userId          BigInt
+  wallet          String
+  amount          Decimal
+  blockNumber     BigInt
+  timestamp       DateTime @default(now())
+}
+
+model ReserveEvent {
+  id              String   @id @default(uuid())
+  txHash          String
+  category        String   // BoardRewards, LevelIncome
+  amount          Decimal
+  remainingBucket Decimal
+  timestamp       DateTime @default(now())
+}
+
+model SyncState {
+  key             String   @id
+  lastIndexedBlock BigInt
+  updatedAt       DateTime @updatedAt
+}

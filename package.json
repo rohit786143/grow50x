@@ -1,0 +1,19 @@
+{
+  "name": "grow50x-protocol",
+  "version": "1.0.0",
+  "description": "GROW 50X Web3 DApp - Smart Contracts, Frontend, Indexer",
+  "main": "index.js",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "test:coverage": "hardhat coverage",
+    "deploy:testnet": "hardhat run scripts/deploy.ts --network bscTestnet"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@openzeppelin/contracts": "^5.0.2",
+    "dotenv": "^16.4.5",
+    "hardhat": "^2.22.2",
+    "typescript": "^5.4.3"
+  }
+}

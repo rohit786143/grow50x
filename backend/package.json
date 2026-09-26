@@ -1,0 +1,24 @@
+{
+  "name": "grow50x-backend-indexer",
+  "version": "1.0.0",
+  "description": "Blockchain Event Indexer and Analytics API Service for GROW 50X Protocol",
+  "main": "dist/indexer.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/indexer.js",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.11.0",
+    "dotenv": "^16.4.5",
+    "ethers": "^6.11.1",
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.11.30",
+    "prisma": "^5.11.0",
+    "typescript": "^5.4.3"
+  }
+}
