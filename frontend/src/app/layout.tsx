@@ -1,31 +1,33 @@
+'use client';
+
 import './globals.css';
 import React from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import WalletConnect from '../components/WalletConnect';
 import Sidebar from '../components/Sidebar';
-
-export const metadata = {
-  title: 'GROW 50X - Decentralized Web3 Protocol',
-  description: 'Operating on BNB Smart Chain with USDT BEP-20',
-};
 
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+  const isHomePage = pathname === '/';
+
   return (
     <html lang="en">
       <body className="min-h-screen bg-slate-100 text-slate-900 flex flex-col font-sans">
         {/* Top Header Bar */}
-        <header className="sticky top-0 z-50 bg-white border-b border-slate-200 px-6 py-3.5 shadow-sm">
+        <header className="sticky top-0 z-50 bg-white border-b border-slate-200 px-6 py-3 shadow-sm">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
-            {/* Logo */}
-            <Link href="/dashboard" className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-600 via-blue-600 to-emerald-600 flex items-center justify-center font-black text-white text-xl shadow-md shadow-sky-500/20">
-                50X
-              </div>
-              <span className="font-extrabold text-xl tracking-wider gradient-text-blue">GROW 50X</span>
+            {/* Logo Image */}
+            <Link href="/" className="flex items-center gap-3">
+              <img
+                src="/logo.png"
+                alt="GROW 50X Official Logo"
+                className="h-11 w-auto object-contain hover:scale-105 transition-transform"
+              />
             </Link>
 
             {/* Wallet & Top Actions */}
@@ -35,16 +37,19 @@ export default function RootLayout({
           </div>
         </header>
 
-        {/* Main Body with Left Sidebar */}
-        <div className="flex-1 flex max-w-7xl w-full mx-auto">
-          {/* Left Navigation Sidebar */}
-          <Sidebar />
-
-          {/* Main Dashboard Content Area */}
-          <main className="flex-1 p-6 lg:p-8 overflow-y-auto">
+        {/* Conditional Layout: Full width on Home Landing Page, Sidebar on Inner App Pages */}
+        {isHomePage ? (
+          <main className="flex-1 max-w-7xl w-full mx-auto p-6 lg:p-8">
             {children}
           </main>
-        </div>
+        ) : (
+          <div className="flex-1 flex max-w-7xl w-full mx-auto">
+            <Sidebar />
+            <main className="flex-1 p-6 lg:p-8 overflow-y-auto">
+              {children}
+            </main>
+          </div>
+        )}
 
         {/* Footer */}
         <footer className="border-t border-slate-200 py-4 px-6 bg-white text-center text-xs text-slate-500">
