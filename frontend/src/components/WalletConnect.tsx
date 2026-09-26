@@ -10,6 +10,7 @@ export default function WalletConnect() {
   const [bnbBalance, setBnbBalance] = useState<string>('0');
   const [chainId, setChainId] = useState<number | null>(null);
   const [isConnecting, setIsConnecting] = useState<boolean>(false);
+  const [isClaimingFaucet, setIsClaimingFaucet] = useState<boolean>(false);
 
   const BSC_TESTNET_HEX_CHAIN_ID = '0x61'; // 97 in decimal
 
@@ -89,7 +90,6 @@ export default function WalletConnect() {
       if (accounts.length > 0) {
         setAccount(accounts[0]);
 
-        // Check Network Chain ID
         const provider = new ethers.BrowserProvider(ethereum);
         const network = await provider.getNetwork();
         const currentChain = Number(network.chainId);
@@ -119,7 +119,6 @@ export default function WalletConnect() {
         params: [{ chainId: BSC_TESTNET_HEX_CHAIN_ID }],
       });
     } catch (switchError: any) {
-      // Chain not added error code 4902
       if (switchError.code === 4902) {
         try {
           await ethereum.request({
@@ -138,6 +137,51 @@ export default function WalletConnect() {
           console.error('Error adding BSC Testnet network:', addError);
         }
       }
+    }
+  };
+
+  // Claim 1,000 Testnet USDT from MockUSDT Faucet
+  const claimFaucetUsdt = async () => {
+    if (typeof window === 'undefined' || !(window as any).ethereum || !account) return;
+    setIsClaimingFaucet(true);
+    try {
+      const provider = new ethers.BrowserProvider((window as any).ethereum);
+      const signer = await provider.getSigner();
+      const usdtContract = new ethers.Contract(CONTRACT_ADDRESSES.USDT, MOCK_USDT_ABI, signer);
+
+      const tx = await usdtContract.faucet();
+      console.log('Faucet TX sent:', tx.hash);
+      await tx.wait();
+      alert('🎉 1,000 Mock USDT successfully minted to your wallet!');
+
+      await fetchBalances(account);
+      await addUsdtToMetaMask();
+    } catch (err: any) {
+      console.error('Faucet claim error:', err);
+      alert(err.reason || err.message || 'Failed to claim faucet USDT');
+    } finally {
+      setIsClaimingFaucet(false);
+    }
+  };
+
+  // Prompt MetaMask to import the Mock USDT Token
+  const addUsdtToMetaMask = async () => {
+    if (typeof window === 'undefined' || !(window as any).ethereum) return;
+    try {
+      await (window as any).ethereum.request({
+        method: 'wallet_watchAsset',
+        params: {
+          type: 'ERC20',
+          options: {
+            address: CONTRACT_ADDRESSES.USDT,
+            symbol: 'USDT',
+            decimals: 18,
+            image: 'https://cryptologos.cc/logos/tether-usdt-logo.png',
+          },
+        },
+      });
+    } catch (err) {
+      console.error('Error adding USDT token to MetaMask:', err);
     }
   };
 
@@ -162,7 +206,26 @@ export default function WalletConnect() {
   const isWrongNetwork = chainId !== BSC_TESTNET_CHAIN_ID;
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex flex-wrap items-center gap-3">
+      {/* Faucet & Import Tokens Buttons */}
+      <button
+        onClick={claimFaucetUsdt}
+        disabled={isClaimingFaucet}
+        className="bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold px-3 py-1.5 rounded-xl text-xs shadow-md transition-transform flex items-center gap-1.5"
+        title="Claim 1,000 Free Testnet USDT"
+      >
+        <span>🎁</span>
+        {isClaimingFaucet ? 'Claiming...' : 'Get 1,000 USDT'}
+      </button>
+
+      <button
+        onClick={addUsdtToMetaMask}
+        className="bg-slate-800 hover:bg-slate-700 text-cyan-400 font-semibold px-2.5 py-1.5 rounded-xl text-xs border border-slate-700 transition-colors"
+        title="Import USDT Token into MetaMask"
+      >
+        ➕ Add to MetaMask
+      </button>
+
       {isWrongNetwork ? (
         <button
           onClick={switchNetwork}

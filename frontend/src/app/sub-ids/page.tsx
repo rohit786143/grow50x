@@ -1,30 +1,156 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { ethers } from 'ethers';
+import { CONTRACT_ADDRESSES, GROW50X_CORE_ABI, MOCK_USDT_ABI } from '../../config/contracts';
 
 export default function SubIdsPage() {
+  const [account, setAccount] = useState<string | null>(null);
+  const [mainUserId, setMainUserId] = useState<number>(0);
+  const [ownedIds, setOwnedIds] = useState<{ id: number; display: string }[]>([]);
   const [selectedTab, setSelectedTab] = useState<'manual' | 'auto'>('auto');
   const [batchCount, setBatchCount] = useState<number>(20);
-  const [manualSponsorId, setManualSponsorId] = useState<string>('GR00001');
+  const [manualSponsorId, setManualSponsorId] = useState<number>(1);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [statusMessage, setStatusMessage] = useState<string>('');
 
-  // Owned IDs available for manual Sub-ID sponsor selection
-  const ownedIds = [
-    { id: 1, display: 'GR00001 (Main ID)' },
-    { id: 2, display: 'GR00002 (Sub-ID 1)' },
-    { id: 3, display: 'GR00003 (Sub-ID 2)' },
-    { id: 4, display: 'GR00004 (Sub-ID 3)' },
-  ];
+  useEffect(() => {
+    loadOwnedIds();
+
+    if (typeof window !== 'undefined' && (window as any).ethereum) {
+      const ethereum = (window as any).ethereum;
+      ethereum.on('accountsChanged', () => loadOwnedIds());
+    }
+  }, []);
+
+  const loadOwnedIds = async () => {
+    if (typeof window === 'undefined' || !(window as any).ethereum) return;
+    try {
+      const provider = new ethers.BrowserProvider((window as any).ethereum);
+      const accounts = await provider.send('eth_accounts', []);
+      if (accounts.length === 0) return;
+
+      const userWallet = accounts[0];
+      setAccount(userWallet);
+
+      const coreContract = new ethers.Contract(CONTRACT_ADDRESSES.GROW50X_CORE, GROW50X_CORE_ABI, provider);
+      const mIdRaw = await coreContract.walletToMainUserId(userWallet);
+      const mId = Number(mIdRaw);
+      setMainUserId(mId);
+
+      if (mId > 0) {
+        setManualSponsorId(mId);
+        const subIdsRaw = await coreContract.ownerSubIds(mId);
+        const list = [{ id: mId, display: `GR${mId.toString().padStart(5, '0')} (Main ID)` }];
+        subIdsRaw.forEach((subIdBig: any, idx: number) => {
+          const sId = Number(subIdBig);
+          list.push({ id: sId, display: `GR${sId.toString().padStart(5, '0')} (Sub-ID ${idx + 1})` });
+        });
+        setOwnedIds(list);
+      } else {
+        setOwnedIds([]);
+      }
+    } catch (err) {
+      console.error('Error loading owned IDs:', err);
+    }
+  };
 
   const totalBatchCost = batchCount * 100;
 
-  const handleCreateBatch = (e: React.FormEvent) => {
+  const handleCreateBatch = async (e: React.FormEvent) => {
     e.preventDefault();
-    alert(`Initiating Auto-Create Batch for ${batchCount} Sub-IDs (${totalBatchCost} USDT). Requires wallet approval.`);
+    if (typeof window === 'undefined' || !(window as any).ethereum) return;
+
+    if (mainUserId === 0) {
+      alert('Please register your Main ID on the Dashboard first before creating Sub-IDs!');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setStatusMessage(`Approving ${totalBatchCost} USDT for ${batchCount} Sub-IDs...`);
+
+    try {
+      const provider = new ethers.BrowserProvider((window as any).ethereum);
+      const signer = await provider.getSigner();
+      const usdtContract = new ethers.Contract(CONTRACT_ADDRESSES.USDT, MOCK_USDT_ABI, signer);
+      const coreContract = new ethers.Contract(CONTRACT_ADDRESSES.GROW50X_CORE, GROW50X_CORE_ABI, signer);
+
+      const userAddr = await signer.getAddress();
+      const totalCostWei = ethers.parseEther(totalBatchCost.toString());
+
+      // 1. Check Allowance
+      const allowance = await usdtContract.allowance(userAddr, CONTRACT_ADDRESSES.GROW50X_CORE);
+      if (allowance < totalCostWei) {
+        setStatusMessage('Approving USDT transfer (Step 1/2)...');
+        const approveTx = await usdtContract.approve(CONTRACT_ADDRESSES.GROW50X_CORE, ethers.MaxUint256);
+        await approveTx.wait();
+        setStatusMessage('USDT approval confirmed! Creating Sub-ID batch...');
+      }
+
+      // 2. Execute Batch Sub-ID Creation
+      setStatusMessage(`Creating ${batchCount} Sub-IDs on BSC Testnet (Step 2/2)...`);
+      const batchTx = await coreContract.createBatchSubIds(batchCount);
+      console.log('Batch TX:', batchTx.hash);
+      await batchTx.wait();
+
+      setStatusMessage(`🎉 Successfully created ${batchCount} Sub-IDs on BSC Testnet!`);
+      alert(`🎉 Success! ${batchCount} Sub-IDs created!`);
+
+      await loadOwnedIds();
+    } catch (err: any) {
+      console.error('Batch creation error:', err);
+      const msg = err.reason || err.message || 'Transaction failed';
+      setStatusMessage(`❌ Error: ${msg}`);
+      alert(`Error: ${msg}`);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleCreateManual = (e: React.FormEvent) => {
+  const handleCreateManual = async (e: React.FormEvent) => {
     e.preventDefault();
-    alert(`Initiating Single Sub-ID creation under sponsor ${manualSponsorId} (100 USDT).`);
+    if (typeof window === 'undefined' || !(window as any).ethereum) return;
+
+    if (mainUserId === 0) {
+      alert('Please register your Main ID on the Dashboard first!');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setStatusMessage('Approving 100 USDT...');
+
+    try {
+      const provider = new ethers.BrowserProvider((window as any).ethereum);
+      const signer = await provider.getSigner();
+      const usdtContract = new ethers.Contract(CONTRACT_ADDRESSES.USDT, MOCK_USDT_ABI, signer);
+      const coreContract = new ethers.Contract(CONTRACT_ADDRESSES.GROW50X_CORE, GROW50X_CORE_ABI, signer);
+
+      const userAddr = await signer.getAddress();
+      const entryFeeWei = ethers.parseEther('100');
+
+      const allowance = await usdtContract.allowance(userAddr, CONTRACT_ADDRESSES.GROW50X_CORE);
+      if (allowance < entryFeeWei) {
+        setStatusMessage('Approving USDT transfer...');
+        const approveTx = await usdtContract.approve(CONTRACT_ADDRESSES.GROW50X_CORE, ethers.MaxUint256);
+        await approveTx.wait();
+      }
+
+      setStatusMessage('Creating Sub-ID on BSC Testnet...');
+      const createTx = await coreContract.createSubId(manualSponsorId, 0);
+      await createTx.wait();
+
+      setStatusMessage('🎉 Sub-ID successfully created!');
+      alert('🎉 Sub-ID created!');
+
+      await loadOwnedIds();
+    } catch (err: any) {
+      console.error('Single Sub-ID error:', err);
+      const msg = err.reason || err.message || 'Transaction failed';
+      setStatusMessage(`❌ Error: ${msg}`);
+      alert(`Error: ${msg}`);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -36,6 +162,12 @@ export default function SubIdsPage() {
           Sub-IDs inherit sponsor relationships exclusively from your owned ID network. Level income generated by Sub-IDs is aggregated to your Main User account.
         </p>
       </div>
+
+      {statusMessage && (
+        <div className="p-3 bg-slate-900 rounded-xl border border-cyan-800/50 text-xs font-semibold text-cyan-300">
+          {statusMessage}
+        </div>
+      )}
 
       {/* Tab Switcher */}
       <div className="flex bg-slate-900/90 p-1.5 rounded-2xl border border-slate-800 max-w-md">
@@ -110,23 +242,12 @@ export default function SubIdsPage() {
               </div>
             </div>
 
-            {/* Structure Preview Matrix */}
-            <div className="space-y-2">
-              <span className="text-xs font-bold text-slate-400 uppercase">Deterministic Sponsor Tree Preview</span>
-              <div className="bg-slate-900/90 p-4 rounded-2xl border border-slate-800/80 font-mono text-xs text-slate-300 space-y-1 max-h-40 overflow-y-auto">
-                <p className="text-cyan-400 font-semibold">Main ID (GR00001)</p>
-                <p className="pl-4">├── Sub-1 (GR00002) & Sub-2 (GR00003)</p>
-                {batchCount >= 4 && <p className="pl-8">├── Sub-1 ── Sub-3 (GR00004) & Sub-4 (GR00005)</p>}
-                {batchCount >= 6 && <p className="pl-8">├── Sub-2 ── Sub-5 (GR00006) & Sub-6 (GR00007)</p>}
-                {batchCount > 6 && <p className="pl-12 text-slate-500">... and so on up to Sub-{batchCount}</p>}
-              </div>
-            </div>
-
             <button
               type="submit"
+              disabled={isSubmitting}
               className="w-full gradient-btn py-3.5 rounded-xl font-bold text-slate-950 text-sm shadow-lg shadow-cyan-500/20"
             >
-              Approve & Create {batchCount} Sub-IDs (${totalBatchCost} USDT)
+              {isSubmitting ? 'Processing Batch Sub-IDs on BSC...' : `Approve & Create ${batchCount} Sub-IDs ($${totalBatchCost} USDT)`}
             </button>
           </form>
         </div>
@@ -145,17 +266,21 @@ export default function SubIdsPage() {
           <form onSubmit={handleCreateManual} className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-slate-300 mb-1">Select Permitted Sponsor ID</label>
-              <select
-                value={manualSponsorId}
-                onChange={(e) => setManualSponsorId(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-cyan-500"
-              >
-                {ownedIds.map((item) => (
-                  <option key={item.id} value={item.display}>
-                    {item.display}
-                  </option>
-                ))}
-              </select>
+              {ownedIds.length > 0 ? (
+                <select
+                  value={manualSponsorId}
+                  onChange={(e) => setManualSponsorId(parseInt(e.target.value))}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-cyan-500 font-mono"
+                >
+                  {ownedIds.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.display}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <p className="text-xs text-amber-400">Main ID registration required first to view permitted sponsors.</p>
+              )}
               <p className="text-[11px] text-slate-500 mt-1">
                 🔒 On-chain check enforces `users[sponsorId].ownerMainUserId == msg.sender`
               </p>
@@ -163,9 +288,10 @@ export default function SubIdsPage() {
 
             <button
               type="submit"
+              disabled={isSubmitting || ownedIds.length === 0}
               className="w-full gradient-btn py-3.5 rounded-xl font-bold text-slate-950 text-sm shadow-md"
             >
-              Create Sub-ID (100 USDT)
+              {isSubmitting ? 'Creating Sub-ID...' : 'Create Sub-ID (100 USDT)'}
             </button>
           </form>
         </div>
