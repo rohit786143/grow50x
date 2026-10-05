@@ -19,7 +19,7 @@ const config: HardhatUserConfig = {
       chainId: 1337,
     },
     bscTestnet: {
-      url: process.env.NEXT_PUBLIC_RPC_URL || "https://data-seed-prebsc-1-s1.binance.org:8545/",
+      url: process.env.NEXT_PUBLIC_RPC_URL || "https://bsc-testnet-rpc.publicnode.com",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
       chainId: 97,
     },
@@ -29,6 +29,21 @@ const config: HardhatUserConfig = {
     tests: "./test",
     cache: "./cache",
     artifacts: "./artifacts",
+  },
+  etherscan: {
+    apiKey: {
+      bscTestnet: "J56YBV4RBS3749QYBV46A45956I691A",
+    },
+    customChains: [
+      {
+        network: "bscTestnet",
+        chainId: 97,
+        urls: {
+          apiURL: "https://api-testnet.bscscan.com/api",
+          browserURL: "https://testnet.bscscan.com",
+        },
+      },
+    ],
   },
 };
 

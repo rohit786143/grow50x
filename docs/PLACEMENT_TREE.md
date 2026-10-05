@@ -13,7 +13,7 @@ The Placement Tree governs 7-position board unit filling, position traversal, an
 
 ## Deterministic Filling Algorithm
 Positions are filled strictly in the order:
-$$\text{TOP} \rightarrow \text{BOTTOM}, \quad \text{RIGHT} \rightarrow \text{LEFT}$$
+$$\text{TOP} \rightarrow \text{BOTTOM}, \quad \text{LEFT} \rightarrow \text{RIGHT}$$
 
 Internal traversal array: `[0, 2, 1, 6, 5, 4, 3]`.
 

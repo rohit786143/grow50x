@@ -20,13 +20,13 @@ async function main() {
   await usdt.waitForDeployment();
   const usdtAddress = await usdt.getAddress();
 
-  const CoreFactory = await ethers.getContractFactory("Grow50XCore");
+  const CoreFactory = await ethers.getContractFactory("Grow50XCoreV4");
   const core = await CoreFactory.deploy(usdtAddress, admin1Address, admin2Address, admin3Address);
   await core.waitForDeployment();
   const coreAddress = await core.getAddress();
 
   console.log(`>>> MockUSDT deployed at: ${usdtAddress}`);
-  console.log(`>>> Grow50XCore deployed at: ${coreAddress}`);
+  console.log(`>>> Grow50XCoreV4 deployed at: ${coreAddress}`);
 
   console.log("\n[2/6] Funding 7 Dummy Users with 10,000 Mock USDT each & approving contract...");
   const MINT_AMOUNT = ethers.parseEther("10000");
@@ -40,30 +40,44 @@ async function main() {
 
   console.log("\n[3/6] Executing Main User Registrations & Building Sponsor Tree...");
   
-  // User 1 (Root Main ID = GR00001) registers
-  console.log("  └─ Registering Root Main ID (GR00001) under self/sponsor 1...");
+  // User 1 (Root Main ID) registers
+  console.log("  └─ Registering Root Main ID (GR...) under self/sponsor 1...");
   await core.connect(dummyWallets[0]).registerMainUser(1, 0);
+  const u1Id = Number(await core.walletToMainUserId(dummyWallets[0].address));
+  console.log(`     ✓ Root Main User 1 generated 6-Digit Random ID: GR${u1Id}`);
 
-  // User 2 & User 3 register under User 1 (Sponsor ID 1) -> User 1 gets 2 directs (Qualified for Board 2)
-  console.log("  └─ Registering GR00002 & GR00003 sponsored by GR00001...");
-  await core.connect(dummyWallets[1]).registerMainUser(1, 0);
-  await core.connect(dummyWallets[2]).registerMainUser(1, 0);
+  // User 2 & User 3 register under User 1 (Sponsor ID u1Id) -> User 1 gets 2 directs (Qualified for Board 2)
+  console.log(`  └─ Registering User 2 & User 3 sponsored by GR${u1Id}...`);
+  await core.connect(dummyWallets[1]).registerMainUser(u1Id, 0);
+  const u2Id = Number(await core.walletToMainUserId(dummyWallets[1].address));
+  console.log(`     ✓ User 2 generated 6-Digit Random ID: GR${u2Id}`);
+
+  await core.connect(dummyWallets[2]).registerMainUser(u1Id, 0);
+  const u3Id = Number(await core.walletToMainUserId(dummyWallets[2].address));
+  console.log(`     ✓ User 3 generated 6-Digit Random ID: GR${u3Id}`);
 
   // User 4, 5, 6, 7 register -> Fills Board 1 (7 positions occupied!)
-  console.log("  └─ Registering GR00004, GR00005, GR00006, GR00007 to complete 7-position Board 1...");
-  await core.connect(dummyWallets[3]).registerMainUser(2, 0);
-  await core.connect(dummyWallets[4]).registerMainUser(2, 0);
-  await core.connect(dummyWallets[5]).registerMainUser(3, 0);
-  await core.connect(dummyWallets[6]).registerMainUser(3, 0);
+  console.log("  └─ Registering User 4, 5, 6, 7 to complete 7-position Board 1...");
+  await core.connect(dummyWallets[3]).registerMainUser(u2Id, 0);
+  const u4Id = Number(await core.walletToMainUserId(dummyWallets[3].address));
 
-  console.log("\n🎉 Board 1 Completed! Top ID (GR00001) received $40 reward and advanced to Board 2!");
+  await core.connect(dummyWallets[4]).registerMainUser(u2Id, 0);
+  const u5Id = Number(await core.walletToMainUserId(dummyWallets[4].address));
 
-  console.log("\n[4/6] Testing Automatic Sub-ID Batch Generator (User 1 creates 10 Sub-IDs)...");
-  console.log("  └─ User 1 approving 1,000 USDT for 10 Sub-IDs batch creation...");
-  await core.connect(dummyWallets[0]).createBatchSubIds(10);
+  await core.connect(dummyWallets[5]).registerMainUser(u3Id, 0);
+  const u6Id = Number(await core.walletToMainUserId(dummyWallets[5].address));
+
+  await core.connect(dummyWallets[6]).registerMainUser(u3Id, 0);
+  const u7Id = Number(await core.walletToMainUserId(dummyWallets[6].address));
+
+  console.log(`\n🎉 Board 1 Completed! Top ID (GR${u1Id}) received $40 reward and advanced to Board 2!`);
+
+  console.log("\n[4/6] Testing Automatic Sub-ID Batch Generator (User 1 creates 5 Sub-IDs)...");
+  console.log("  └─ User 1 approving USDT for 5 Sub-IDs batch creation...");
+  await core.connect(dummyWallets[0]).createBatchSubIds(5);
   
-  const ownerSubIdsList = await core.getOwnerSubIds(1);
-  console.log(`>>> Main User GR00001 now owns ${ownerSubIdsList.length} Sub-IDs!`);
+  const ownerSubIdsList = await core.getOwnerSubIds(u1Id);
+  console.log(`>>> Main User GR${u1Id} now owns ${ownerSubIdsList.length} Sub-IDs!`);
 
   console.log("\n[5/6] Fast-Forwarding EVM Time by 10 Days to Test Share Pool Distribution...");
   await ethers.provider.send("evm_increaseTime", [864000]); // 10 days
@@ -73,21 +87,21 @@ async function main() {
   await core.finalizeSharePeriod();
 
   console.log("  └─ User 1 claiming share pool income...");
-  await core.connect(dummyWallets[0]).claimShareIncome(1);
+  await core.connect(dummyWallets[0]).claimAllShareIncome();
 
   console.log("\n[6/6] SIMULATION FINANCIAL AUDIT REPORT");
   console.log("========================================================================");
   
-  const u1Income = await core.userIncomes(1);
+  const u1Income = await core.userIncomes(u1Id);
   const sharePoolBal = await core.sharePoolBalance();
   const reserveBoard = await core.reserveForBoardRewards();
   const reserveLevel = await core.reserveForLevelIncome();
   const contractUsdtBal = await usdt.balanceOf(coreAddress);
 
-  console.log(`👤 User 1 (GR00001) Direct Income:       $${ethers.formatEther(u1Income.directIncome)} USDT`);
-  console.log(`👤 User 1 (GR00001) Board Rewards:       $${ethers.formatEther(u1Income.boardRewards)} USDT`);
-  console.log(`👤 User 1 (GR00001) Sub-ID Level Income: $${ethers.formatEther(u1Income.levelIncome)} USDT`);
-  console.log(`👤 User 1 (GR00001) Lifetime Share Income: $${ethers.formatEther(u1Income.lifetimeShareIncomeEarned)} USDT`);
+  console.log(`👤 User 1 (GR${u1Id}) Direct Income:       $${ethers.formatEther(u1Income.directIncome)} USDT`);
+  console.log(`👤 User 1 (GR${u1Id}) Board Rewards:       $${ethers.formatEther(u1Income.boardRewards)} USDT`);
+  console.log(`👤 User 1 (GR${u1Id}) Sub-ID Level Income: $${ethers.formatEther(u1Income.levelIncome)} USDT`);
+  console.log(`👤 User 1 (GR${u1Id}) Lifetime Share Income: $${ethers.formatEther(u1Income.lifetimeShareIncomeEarned)} USDT`);
   console.log("------------------------------------------------------------------------");
   console.log(`🏦 Contract USDT Balance:       $${ethers.formatEther(contractUsdtBal)} USDT`);
   console.log(`📊 Active Share Pool Balance:   $${ethers.formatEther(sharePoolBal)} USDT`);

@@ -8,7 +8,7 @@
 1. **Blockchain Source of Truth**: User IDs, Sponsor relationships, Placement trees, 7-position Board states, direct counts, qualification checks, Share Pool accounting, Sub-ID structures, and USDT balances are **100% stored on-chain**.
 2. **Dual-Tree Architecture**: 
    - **Sponsor Tree**: Controls direct sponsor commission ($40), direct qualification counts (`directCount`), Sub-ID sponsor inheritance, and level-income eligibility.
-   - **Placement Tree**: Controls 7-position board unit position filling (`TOP -> BOTTOM, RIGHT -> LEFT`), board completion, board split, and auto-placement.
+   - **Placement Tree**: Controls 7-position board unit position filling (`TOP -> BOTTOM, LEFT -> RIGHT`), board completion, board split, and auto-placement.
 3. **Zero Arbitrary Admin Privileges**: The contract contains NO functions to arbitrarily modify user balances, adjust placements, alter sponsor ties, or drain funds.
 
 ---

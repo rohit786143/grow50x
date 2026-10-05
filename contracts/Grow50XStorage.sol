@@ -76,7 +76,4 @@ contract Grow50XStorage {
     uint256 public constant LEVEL_1_INCOME = 3 * 10**18; // 3 USDT
     uint256 public constant LEVEL_2_INCOME = 2 * 10**18; // 2 USDT
     uint256 public constant LEVEL_3_INCOME = 1 * 10**18; // 1 USDT
-
-    // Share Pool Period Duration (10 days)
-    uint256 public constant PERIOD_DURATION = 10 days;
 }

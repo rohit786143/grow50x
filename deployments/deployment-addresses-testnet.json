@@ -1,13 +1,21 @@
 {
   "network": "bscTestnet",
   "chainId": 97,
-  "deployedAt": "2026-09-26T15:31:17.566Z",
+  "deployedAt": "2026-10-05T08:31:19.981Z",
   "deployer": "0x43E4E03d293BB46C4861a0a4dB3B0823a44e4cf5",
   "contracts": {
-    "MockUSDT": "0x9b77032522014EF0FB462CFD615c435d6c220c0F",
-    "Grow50XCore": "0x9C4b76f3E616538406adc70B08a55f0D099C31d8",
+    "MockUSDT": "0x5412e810258E7bFdB9CA77cb7854FFAc6AC9eF99",
+    "Grow50XCoreV1_2": "0xB899d207532bB2be34E2B385DBbAD37F71894Fd9",
     "AdminWallet1": "0x7D27949028D8c8532728c69fF2153Ee6Bb3bF82e",
     "AdminWallet2": "0x7A3FC2c5610F0962Dd5927a4f7397aE060B79d68",
     "AdminWallet3": "0x2B255ED42530Cb531CbDaB4C4Df23Eb408fB748B"
+  },
+  "verificationInfo": {
+    "contractName": "Grow50XCoreV1_2",
+    "compilerVersion": "v0.8.24+commit.e11b9ed9",
+    "optimizationEnabled": true,
+    "runs": 200,
+    "evmVersion": "paris",
+    "constructorArgumentsABI": "0000000000000000000000005412e810258e7bfdb9ca77cb7854ffac6ac9ef990000000000000000000000007d27949028d8c8532728c69ff2153ee6bb3bf82e0000000000000000000000007a3fc2c5610f0962dd5927a4f7397ae060b79d680000000000000000000000002b255ed42530cb531cbdab4c4df23eb408fb748b"
   }
 }

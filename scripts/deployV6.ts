@@ -4,7 +4,7 @@ import * as path from "path";
 
 async function main() {
   console.log("====================================================");
-  console.log("   GROW 50X DEPLOYMENT - BNB SMART CHAIN TESTNET");
+  console.log("   GROW 50X DEPLOYMENT V6 - BNB SMART CHAIN TESTNET");
   console.log("====================================================");
 
   const [deployer] = await ethers.getSigners();
@@ -12,28 +12,24 @@ async function main() {
   const balance = await ethers.provider.getBalance(deployer.address);
   console.log("Account balance:", ethers.formatEther(balance), "BNB");
 
-  // 1. Deploy Mock USDT (for testnet testing)
-  console.log("\n[1/3] Deploying Mock USDT...");
-  const MockUSDTFactory = await ethers.getContractFactory("MockUSDT");
-  const usdt = await MockUSDTFactory.deploy();
-  await usdt.waitForDeployment();
-  const usdtAddress = await usdt.getAddress();
-  console.log(">>> MockUSDT deployed at:", usdtAddress);
+  // Re-use existing MockUSDT
+  const usdtAddress = "0x5412e810258E7bFdB9CA77cb7854FFAc6AC9eF99";
+  console.log(">>> Using MockUSDT at:", usdtAddress);
 
-  // Define Official Admin Wallets for 5% splits
+  // Define Official Admin Wallets
   const admin1 = process.env.ADMIN_WALLET_1 || "0x7D27949028D8c8532728c69fF2153Ee6Bb3bF82e";
   const admin2 = process.env.ADMIN_WALLET_2 || "0x7A3FC2c5610F0962Dd5927a4f7397aE060B79d68";
   const admin3 = process.env.ADMIN_WALLET_3 || "0x2B255ED42530Cb531CbDaB4C4Df23Eb408fB748B";
 
-  // 2. Deploy Grow50XCoreV4
-  console.log("\n[2/3] Deploying Grow50XCoreV4 protocol contract...");
-  const CoreFactory = await ethers.getContractFactory("contracts/Grow50XCoreV1_1.sol:Grow50XCoreV1_1");
+  // Deploy Grow50XCoreV6
+  console.log("\n[2/3] Deploying Grow50XCoreV6 protocol contract...");
+  const CoreFactory = await ethers.getContractFactory("contracts/Grow50XCoreV6.sol:Grow50XCoreV6");
   const core = await CoreFactory.deploy(usdtAddress, admin1, admin2, admin3);
   await core.waitForDeployment();
   const coreAddress = await core.getAddress();
-  console.log(">>> Grow50XCoreV4 deployed at:", coreAddress);
+  console.log(">>> Grow50XCoreV6 deployed at:", coreAddress);
 
-  // 3. Save Deployment Artifacts
+  // Save Deployment Artifacts
   console.log("\n[3/3] Saving deployment addresses...");
   const deploymentDir = path.join(__dirname, "../deployments");
   if (!fs.existsSync(deploymentDir)) {
@@ -47,7 +43,7 @@ async function main() {
     deployer: deployer.address,
     contracts: {
       MockUSDT: usdtAddress,
-      Grow50XCoreV4: coreAddress,
+      Grow50XCoreV6: coreAddress,
       AdminWallet1: admin1,
       AdminWallet2: admin2,
       AdminWallet3: admin3,
@@ -57,10 +53,6 @@ async function main() {
   const filePath = path.join(deploymentDir, "deployment-addresses-testnet.json");
   fs.writeFileSync(filePath, JSON.stringify(deploymentData, null, 2));
   console.log(">>> Saved deployment details to:", filePath);
-
-  console.log("\n====================================================");
-  console.log("   DEPLOYMENT COMPLETE - READY FOR FRONTEND CONNECT");
-  console.log("====================================================");
 }
 
 main().catch((error) => {

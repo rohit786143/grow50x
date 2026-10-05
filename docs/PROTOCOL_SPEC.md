@@ -60,15 +60,15 @@ There are 5 progressive Board Levels:
   - Positions 4 & 5: Children of Position 2
   - Positions 6 & 7: Children of Position 3
 - Filling Order across all boards is strictly deterministic:
-  $$\text{TOP} \rightarrow \text{BOTTOM} \quad \text{then} \quad \text{RIGHT} \rightarrow \text{LEFT}$$
+  $$\text{TOP} \rightarrow \text{BOTTOM} \quad \text{then} \quad \text{LEFT} \rightarrow \text{RIGHT}$$
 
 ### Board 1 Placement Rules
 1. **Manual Placement**:
    - User can specify an explicit target Placement ID.
    - Validation: Must exist, must be currently active in Board 1, target position must be open, and tree invariants must hold.
 2. **Auto Placement**:
-   - **Preference 1 (Sponsor's Active Board)**: Check if the Sponsor's active Board 1 unit has an open position. If yes, place into that board unit using `TOP -> BOTTOM -> RIGHT -> LEFT`.
-   - **Preference 2 (Oldest Eligible Board)**: If Sponsor's Board 1 is full or unavailable, find the oldest active Board 1 unit (`boardId` ascending) that has an open position, and place using `TOP -> BOTTOM -> RIGHT -> LEFT`.
+   - **Preference 1 (Sponsor's Active Board)**: Check if the Sponsor's active Board 1 unit has an open position. If yes, place into that board unit using `TOP -> BOTTOM -> LEFT -> RIGHT`.
+   - **Preference 2 (Oldest Eligible Board)**: If Sponsor's Board 1 is full or unavailable, find the oldest active Board 1 unit (`boardId` ascending) that has an open position, and place using `TOP -> BOTTOM -> LEFT -> RIGHT`.
 
 ### Boards 2–5 Placement Rules
 - Manual placement is **disabled** for Boards 2, 3, 4, and 5.

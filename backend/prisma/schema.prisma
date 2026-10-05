@@ -52,21 +52,27 @@ model BoardCycle {
 model IncomeEvent {
   id              String   @id @default(uuid())
   txHash          String
+  logIndex        Int      @default(0)
   eventType       String   // Direct, Share, Level, BoardReward
   userId          BigInt
   wallet          String
   amount          Decimal
   blockNumber     BigInt
   timestamp       DateTime @default(now())
+
+  @@unique([txHash, logIndex])
 }
 
 model ReserveEvent {
   id              String   @id @default(uuid())
   txHash          String
+  logIndex        Int      @default(0)
   category        String   // BoardRewards, LevelIncome
   amount          Decimal
   remainingBucket Decimal
   timestamp       DateTime @default(now())
+
+  @@unique([txHash, logIndex])
 }
 
 model SyncState {
