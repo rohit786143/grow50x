@@ -24,7 +24,8 @@ function SidebarInner({ isMobileOpen, onCloseMobile }: SidebarProps) {
   const isActive = (path: string) => pathname === path;
 
   const isTransactionsRoute = pathname === '/transactions';
-  const isIncomeActive = isTransactionsRoute && viewParam !== 'deposits';
+  const isClaimedIncomeActive = pathname === '/claimed-income' || (isTransactionsRoute && viewParam === 'claimed');
+  const isIncomeActive = isTransactionsRoute && viewParam !== 'deposits' && viewParam !== 'claimed';
   const isDepositsActive = isTransactionsRoute && viewParam === 'deposits';
 
   // Render Admin Navigation Sidebar if on /admin route
@@ -251,6 +252,17 @@ function SidebarInner({ isMobileOpen, onCloseMobile }: SidebarProps) {
                   }`}
                 >
                   📥 My Deposits
+                </Link>
+                <Link
+                  href="/claimed-income"
+                  onClick={() => onCloseMobile?.()}
+                  className={`block px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+                    isClaimedIncomeActive
+                      ? 'bg-emerald-100 text-emerald-800 font-bold border border-emerald-300'
+                      : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
+                  }`}
+                >
+                  💳 Claimed Income
                 </Link>
               </div>
             )}

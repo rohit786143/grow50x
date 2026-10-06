@@ -1,7 +1,7 @@
 import { ethers } from "hardhat";
 
 async function main() {
-  const coreAddress = "0xB899d207532bB2be34E2B385DBbAD37F71894Fd9";
+  const coreAddress = "0x5cc5E4De40Cdc0E0ff8669B740d6Ef674b188A44";
 
   const core = await ethers.getContractAt("contracts/Grow50XCoreV1_2.sol:Grow50XCoreV1_2", coreAddress);
 

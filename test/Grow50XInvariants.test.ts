@@ -25,7 +25,7 @@ describe("GROW 50X Protocol Invariants & Advanced Lifecycle", function () {
     const MockUSDTFactory = await ethers.getContractFactory("MockUSDT");
     usdt = await MockUSDTFactory.deploy();
 
-    const CoreFactory = await ethers.getContractFactory("contracts/Grow50XCoreV1_1.sol:Grow50XCoreV1_1");
+    const CoreFactory = await ethers.getContractFactory("contracts/Grow50XCoreV1_2.sol:Grow50XCoreV1_2");
     core = await CoreFactory.deploy(
       await usdt.getAddress(),
       admin1.address,

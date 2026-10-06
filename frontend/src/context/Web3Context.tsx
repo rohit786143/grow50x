@@ -169,12 +169,8 @@ export function Web3Provider({ children }: { children: ReactNode }) {
       }
       setOwnedIds(idsList);
 
-      setSelectedUserId((prev) => {
-        if (prev > 0 && idsList.some((item) => item.id === prev)) {
-          return prev;
-        }
-        return mId;
-      });
+      // Always reset selected user ID to current wallet's Main ID on account switch
+      setSelectedUserId(mId);
 
       return { isRegistered: registered, mainUserId: mId };
     } catch (err) {

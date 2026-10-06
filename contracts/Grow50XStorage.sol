@@ -44,6 +44,18 @@ contract Grow50XStorage {
         uint256 completedAt;
     }
 
+    struct ClaimRecord {
+        uint256 claimId;
+        uint256 mainUserId;
+        address wallet;
+        uint256 totalAmount;
+        uint256 directAmount;
+        uint256 shareAmount;
+        uint256 levelAmount;
+        uint256 boardRewardAmount;
+        uint256 timestamp;
+    }
+
     // Protocol Constants
     uint256 public constant ENTRY_FEE = 100 * 10**18; // 100 USDT (18 decimals)
     uint256 public constant SPONSOR_FEE = 40 * 10**18;

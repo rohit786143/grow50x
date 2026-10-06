@@ -1,8 +1,8 @@
 export const BSC_TESTNET_CHAIN_ID = 97;
 
 export const CONTRACT_ADDRESSES = {
-  USDT: process.env.NEXT_PUBLIC_USDT_ADDRESS || "0x5412e810258E7bFdB9CA77cb7854FFAc6AC9eF99",
-  GROW50X_CORE: process.env.NEXT_PUBLIC_CORE_ADDRESS || "0xB899d207532bB2be34E2B385DBbAD37F71894Fd9",
+  USDT: process.env.NEXT_PUBLIC_USDT_ADDRESS || "0x417e7Fb37a3803AFfDC13D216b4597a215A89871",
+  GROW50X_CORE: process.env.NEXT_PUBLIC_CORE_ADDRESS || "0x0172c89956FD54f22a0803BdE249079B47c05b82",
 };
 
 
@@ -55,6 +55,7 @@ export const GROW50X_CORE_ABI = [
   "function admin3UnclaimedFees() external view returns (uint256)",
   "function getAdminTelemetry(uint8 adminIndex) external view returns (address adminWallet, uint256 unclaimedFees, uint256 totalEarned, uint256 totalWithdrawn)",
   "function getUserUnclaimedSummary(uint256 mainUserId) external view returns (uint256 unclaimedDirect, uint256 unclaimedLevel, uint256 unclaimedBoardRewards, uint256 unclaimedShareIncome, uint256 totalUnclaimed)",
+  "function getUserClaimHistory(uint256 mainUserId) external view returns (tuple(uint256 claimId, uint256 mainUserId, address wallet, uint256 totalAmount, uint256 directAmount, uint256 shareAmount, uint256 levelAmount, uint256 boardRewardAmount, uint256 timestamp)[])",
   "function getBoardCap(uint8 boardLevel) external pure returns (uint256)",
   "function getShareMultiplier(uint8 boardLevel) external pure returns (uint256)",
   "function currentPeriodStart() external view returns (uint256)",

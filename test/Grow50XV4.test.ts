@@ -26,7 +26,7 @@ describe("GROW 50X V4 Comprehensive Verification Suite", function () {
     usdt = await MockUSDTFactory.deploy();
 
     // Deploy Grow50XCoreV4
-    const CoreFactory = await ethers.getContractFactory("contracts/Grow50XCoreV1_1.sol:Grow50XCoreV1_1");
+    const CoreFactory = await ethers.getContractFactory("contracts/Grow50XCoreV1_2.sol:Grow50XCoreV1_2");
     coreV4 = await CoreFactory.deploy(
       await usdt.getAddress(),
       admin1.address,

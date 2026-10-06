@@ -35,6 +35,12 @@ function TransactionsContent() {
 
   const mainView = viewParam === 'deposits' ? 'deposits' : 'income';
 
+  useEffect(() => {
+    if (viewParam === 'claimed') {
+      router.replace('/claimed-income');
+    }
+  }, [viewParam]);
+
   const { account, mainUserId, selectedUserId, isSubIdSelected, isRegistered } = useWeb3();
   const [incomeTab, setIncomeTab] = useState<string>('all');
 

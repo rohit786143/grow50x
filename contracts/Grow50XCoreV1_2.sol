@@ -95,6 +95,10 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
     mapping(uint256 => CycleRecord) public cycles;
     mapping(uint256 => uint256[]) public userCompletedCycles;           // mainUserId => cycleIds
 
+    // Claim Records & Withdrawal History Ledger
+    uint256 public claimRecordCounter;
+    mapping(uint256 => ClaimRecord[]) public userClaimHistory;           // mainUserId => list of ClaimRecords
+
     // Deterministic position filling order: TOP -> BOTTOM, LEFT -> RIGHT
     uint8[7] private FILL_ORDER = [0, 1, 2, 3, 4, 5, 6];
 
@@ -109,8 +113,8 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
         address _admin2,
         address _admin3
     ) Ownable(msg.sender) {
-        require(_usdtToken != address(0), "Invalid USDT address");
-        require(_admin1 != address(0) && _admin2 != address(0) && _admin3 != address(0), "Invalid admin address");
+        require(_usdtToken != address(0), "Invalid USDT");
+        require(_admin1 != address(0) && _admin2 != address(0) && _admin3 != address(0), "Invalid admin");
 
         usdtToken = IERC20(_usdtToken);
         adminWallet1 = _admin1;
@@ -133,11 +137,11 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
      * @param manualPlacementId Target Board 1 placement ID (0 for Auto Placement).
      */
     function registerMainUser(uint256 sponsorId, uint256 manualPlacementId) external nonReentrant {
-        require(walletToMainUserId[msg.sender] == 0, "Wallet already registered as Main User");
+        require(walletToMainUserId[msg.sender] == 0, "Registered");
         if (totalUserCount == 0) {
             sponsorId = 0; // First system ID (Root) has no sponsor
         } else {
-            require(sponsorId > 0 && users[sponsorId].active, "Invalid or Inactive Sponsor ID");
+            require(sponsorId > 0 && users[sponsorId].active, "Invalid sponsor");
         }
 
         // Deposit 100 USDT (Single token transfer -> Super cheap gas!)
@@ -189,7 +193,7 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
      */
     function createSubId(uint256 sponsorId, uint256 manualPlacementId) external nonReentrant {
         uint256 mainUserId = walletToMainUserId[msg.sender];
-        require(mainUserId != 0, "Main User registration required");
+        require(mainUserId != 0, "Not registered");
 
         uint256 targetSponsorId;
         if (sponsorId == 0) {
@@ -214,9 +218,9 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
      * @param count Number of Sub-IDs to create (1 to 5).
      */
     function createBatchSubIds(uint256 count) external nonReentrant {
-        require(count >= 1 && count <= 5, "Batch count must be 1 to 5");
+        require(count >= 1 && count <= 5, "Count 1 to 5");
         uint256 mainUserId = walletToMainUserId[msg.sender];
-        require(mainUserId != 0, "Main User registration required");
+        require(mainUserId != 0, "Not registered");
 
         uint256 totalCost = count * ENTRY_FEE;
         usdtToken.safeTransferFrom(msg.sender, address(this), totalCost);
@@ -350,20 +354,20 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
 
     function _processLevelIncomeV1_2(uint256 sourceSubId, uint256 mainUserId) internal {
         uint256 currentSponsorId = users[sourceSubId].sponsorId;
+        uint8 externalEligibleCount = 0;
 
-        for (uint8 level = 1; level <= 3; level++) {
-            if (currentSponsorId == 0) break;
-
+        while (currentSponsorId != 0 && externalEligibleCount < 3) {
             uint256 beneficiaryMainUserId = users[currentSponsorId].ownerMainUserId;
 
             if (beneficiaryMainUserId != mainUserId) {
                 uint256 directCount = users[beneficiaryMainUserId].directCount;
 
                 if (directCount >= 2) {
+                    externalEligibleCount++;
                     uint256 levelAmount = 0;
-                    if (level == 1) levelAmount = LEVEL_1_INCOME;      // $3 USDT
-                    else if (level == 2) levelAmount = LEVEL_2_INCOME; // $2 USDT
-                    else if (level == 3) levelAmount = LEVEL_3_INCOME; // $1 USDT
+                    if (externalEligibleCount == 1) levelAmount = LEVEL_1_INCOME;      // $3 USDT (3%)
+                    else if (externalEligibleCount == 2) levelAmount = LEVEL_2_INCOME; // $2 USDT (2%)
+                    else if (externalEligibleCount == 3) levelAmount = LEVEL_3_INCOME; // $1 USDT (1%)
 
                     if (reserveForLevelIncome >= levelAmount) {
                         reserveForLevelIncome -= levelAmount;
@@ -371,7 +375,7 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
                         userIncomes[beneficiaryMainUserId].levelIncome += levelAmount;
                         userUnclaimedLevelIncome[beneficiaryMainUserId] += levelAmount;
 
-                        emit LevelIncomeAccrued(beneficiaryMainUserId, sourceSubId, level, levelAmount, block.timestamp);
+                        emit LevelIncomeAccrued(beneficiaryMainUserId, sourceSubId, externalEligibleCount, levelAmount, block.timestamp);
                         emit ReserveUsed("LevelIncome", levelAmount, reserveForLevelIncome);
                     }
                 }
@@ -952,6 +956,19 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
         uint256 totalClaimable = directAmount + levelAmount + boardRewardAmount + shareAmount;
         require(totalClaimable > 0, "No accumulated income available to claim");
 
+        claimRecordCounter++;
+        userClaimHistory[mainUserId].push(ClaimRecord({
+            claimId: claimRecordCounter,
+            mainUserId: mainUserId,
+            wallet: msg.sender,
+            totalAmount: totalClaimable,
+            directAmount: directAmount,
+            shareAmount: shareAmount,
+            levelAmount: levelAmount,
+            boardRewardAmount: boardRewardAmount,
+            timestamp: block.timestamp
+        }));
+
         usdtToken.safeTransfer(msg.sender, totalClaimable);
         emit AllUserIncomeClaimed(mainUserId, msg.sender, directAmount, shareAmount, levelAmount, boardRewardAmount, totalClaimable, block.timestamp);
     }
@@ -1137,6 +1154,10 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
         }
 
         totalUnclaimed = unclaimedDirect + unclaimedLevel + unclaimedBoardRewards + unclaimedShareIncome;
+    }
+
+    function getUserClaimHistory(uint256 mainUserId) external view returns (ClaimRecord[] memory) {
+        return userClaimHistory[mainUserId];
     }
 
     function _getPendingShareIncomeView(uint256 userId) internal view returns (uint256) {

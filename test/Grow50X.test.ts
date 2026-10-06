@@ -1,11 +1,11 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { Grow50XCoreV1_1, MockUSDT } from "../typechain-types";
+import { Grow50XCoreV1_2, MockUSDT } from "../typechain-types";
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 
 describe("GROW 50X Protocol Unit & Integration Tests", function () {
   let usdt: MockUSDT;
-  let core: Grow50XCoreV1_1;
+  let core: Grow50XCoreV1_2;
   let owner: HardhatEthersSigner;
   let admin1: HardhatEthersSigner;
   let admin2: HardhatEthersSigner;
@@ -25,8 +25,8 @@ describe("GROW 50X Protocol Unit & Integration Tests", function () {
     const MockUSDTFactory = await ethers.getContractFactory("MockUSDT");
     usdt = await MockUSDTFactory.deploy();
 
-    // Deploy Grow50XCoreV1_1
-    const CoreFactory = await ethers.getContractFactory("contracts/Grow50XCoreV1_1.sol:Grow50XCoreV1_1");
+    // Deploy Grow50XCoreV1_2
+    const CoreFactory = await ethers.getContractFactory("contracts/Grow50XCoreV1_2.sol:Grow50XCoreV1_2");
     core = await CoreFactory.deploy(
       await usdt.getAddress(),
       admin1.address,

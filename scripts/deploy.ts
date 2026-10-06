@@ -25,9 +25,9 @@ async function main() {
   const admin2 = process.env.ADMIN_WALLET_2 || "0x7A3FC2c5610F0962Dd5927a4f7397aE060B79d68";
   const admin3 = process.env.ADMIN_WALLET_3 || "0x2B255ED42530Cb531CbDaB4C4Df23Eb408fB748B";
 
-  // 2. Deploy Grow50XCoreV4
-  console.log("\n[2/3] Deploying Grow50XCoreV4 protocol contract...");
-  const CoreFactory = await ethers.getContractFactory("contracts/Grow50XCoreV1_1.sol:Grow50XCoreV1_1");
+  // 2. Deploy Grow50XCoreV1_2
+  console.log("\n[2/3] Deploying Grow50XCoreV1_2 protocol contract...");
+  const CoreFactory = await ethers.getContractFactory("contracts/Grow50XCoreV1_2.sol:Grow50XCoreV1_2");
   const core = await CoreFactory.deploy(usdtAddress, admin1, admin2, admin3);
   await core.waitForDeployment();
   const coreAddress = await core.getAddress();

@@ -9,6 +9,8 @@ export default function SubIdsPage() {
   const [account, setAccount] = useState<string | null>(null);
   const [mainUserId, setMainUserId] = useState<number>(0);
   const [ownedIds, setOwnedIds] = useState<{ id: number; display: string }[]>([]);
+  const [usdtBalance, setUsdtBalance] = useState<string>('0');
+  const [isClaimingFaucet, setIsClaimingFaucet] = useState<boolean>(false);
   const [selectedTab, setSelectedTab] = useState<'manual' | 'auto'>('manual');
   
   // Auto Batch State (Max 5)
@@ -39,6 +41,15 @@ export default function SubIdsPage() {
 
       const userWallet = accounts[0];
       setAccount(userWallet);
+
+      // Load USDT Balance
+      try {
+        const usdtContract = new ethers.Contract(CONTRACT_ADDRESSES.USDT, MOCK_USDT_ABI, provider);
+        const balWei = await usdtContract.balanceOf(userWallet);
+        setUsdtBalance(ethers.formatEther(balWei));
+      } catch (e) {
+        console.warn('Could not load USDT balance:', e);
+      }
 
       const coreAddress = CONTRACT_ADDRESSES.GROW50X_CORE;
       if (!coreAddress || coreAddress === '0x0000000000000000000000000000000000000000') {
@@ -86,6 +97,30 @@ export default function SubIdsPage() {
     }
   };
 
+  const handleClaimFaucet = async () => {
+    if (typeof window === 'undefined' || !(window as any).ethereum) return;
+    setIsClaimingFaucet(true);
+    setStatusMessage('Claiming 1,000 Mock USDT from testnet faucet...');
+    try {
+      const provider = new ethers.BrowserProvider((window as any).ethereum);
+      const signer = await provider.getSigner();
+      const usdtContract = new ethers.Contract(CONTRACT_ADDRESSES.USDT, MOCK_USDT_ABI, signer);
+
+      const tx = await usdtContract.faucet();
+      await tx.wait(1);
+      setStatusMessage('🎉 1,000 Mock USDT claimed successfully!');
+      alert('🎉 1,000 Mock USDT successfully added to your wallet!');
+      await loadOwnedIds();
+    } catch (err: any) {
+      console.error('Faucet error:', err);
+      const msg = err.reason || err.shortMessage || err.message || 'Failed to claim faucet';
+      setStatusMessage(`❌ Faucet Error: ${msg}`);
+      alert(`Faucet Error: ${msg}`);
+    } finally {
+      setIsClaimingFaucet(false);
+    }
+  };
+
   const totalBatchCost = batchCount * 100;
 
   const handleCreateBatch = async (e: React.FormEvent) => {
@@ -103,7 +138,7 @@ export default function SubIdsPage() {
     }
 
     setIsSubmitting(true);
-    setStatusMessage(`Approving ${totalBatchCost} USDT for ${batchCount} Sub-IDs...`);
+    setStatusMessage(`Verifying USDT balance for ${batchCount} Sub-ID(s)...`);
 
     try {
       const provider = new ethers.BrowserProvider((window as any).ethereum);
@@ -114,21 +149,32 @@ export default function SubIdsPage() {
       const userAddr = await signer.getAddress();
       const totalCostWei = ethers.parseEther(totalBatchCost.toString());
 
+      // 0. Check USDT Balance First
+      const balanceWei = await usdtContract.balanceOf(userAddr);
+      if (balanceWei < totalCostWei) {
+        const balFormatted = Number(ethers.formatEther(balanceWei)).toLocaleString();
+        const errStr = `Insufficient Mock USDT balance! You currently have ${balFormatted} USDT, but ${totalBatchCost} USDT is required to create ${batchCount} Sub-ID(s). Please click "Claim 1,000 USDT Faucet" below.`;
+        setStatusMessage(`❌ ${errStr}`);
+        alert(`❌ ${errStr}`);
+        setIsSubmitting(false);
+        return;
+      }
+
       // 1. Check Allowance
       let allowance = await usdtContract.allowance(userAddr, CONTRACT_ADDRESSES.GROW50X_CORE);
       if (allowance < totalCostWei) {
         setStatusMessage('Approving USDT transfer (Step 1/2)...');
         const approveTx = await usdtContract.approve(CONTRACT_ADDRESSES.GROW50X_CORE, ethers.MaxUint256);
-        await approveTx.wait(2);
+        await approveTx.wait(1);
         allowance = await usdtContract.allowance(userAddr, CONTRACT_ADDRESSES.GROW50X_CORE);
         if (allowance < totalCostWei) {
-          await new Promise((resolve) => setTimeout(resolve, 2000));
+          await new Promise((resolve) => setTimeout(resolve, 1500));
         }
         setStatusMessage('USDT approval confirmed! Creating Sub-ID batch...');
       }
 
       // 2. Execute Batch Sub-ID Creation
-      setStatusMessage(`Creating ${batchCount} Sub-IDs automatically (Step 2/2)...`);
+      setStatusMessage(`Creating ${batchCount} Sub-ID(s) automatically (Step 2/2)...`);
       let gasLimit: bigint = BigInt(220000 + batchCount * 140000);
       try {
         const estGas = await coreContract.createBatchSubIds.estimateGas(batchCount);
@@ -143,8 +189,7 @@ export default function SubIdsPage() {
       }
 
       const batchTx = await coreContract.createBatchSubIds(batchCount, { gasLimit });
-      await batchTx.wait();
-
+      await batchTx.wait(1);
 
       setStatusMessage(`🎉 Successfully created ${batchCount} Sub-IDs!`);
       alert(`🎉 Success! ${batchCount} Sub-IDs created automatically!`);
@@ -152,7 +197,18 @@ export default function SubIdsPage() {
       await loadOwnedIds();
     } catch (err: any) {
       console.error('Batch creation error:', err);
-      const msg = err.reason || err.message || 'Transaction failed';
+      let msg = err.reason;
+      if (!msg) {
+        if (err.code === 'ACTION_REJECTED' || err.message?.includes('user rejected')) {
+          msg = 'Transaction rejected by user in wallet.';
+        } else if (err.message?.includes('insufficient funds')) {
+          msg = 'Insufficient BNB balance for network gas fees!';
+        } else if (err.shortMessage) {
+          msg = err.shortMessage;
+        } else {
+          msg = 'Transaction execution reverted. Please verify your wallet balance and network connection.';
+        }
+      }
       setStatusMessage(`❌ Error: ${msg}`);
       alert(`Error: ${msg}`);
     } finally {
@@ -176,7 +232,7 @@ export default function SubIdsPage() {
     }
 
     setIsSubmitting(true);
-    setStatusMessage('Approving 100 USDT...');
+    setStatusMessage('Verifying USDT balance for 100 USDT Sub-ID creation...');
 
     try {
       const provider = new ethers.BrowserProvider((window as any).ethereum);
@@ -187,14 +243,25 @@ export default function SubIdsPage() {
       const userAddr = await signer.getAddress();
       const entryFeeWei = ethers.parseEther('100');
 
+      // 0. Check USDT Balance First
+      const balanceWei = await usdtContract.balanceOf(userAddr);
+      if (balanceWei < entryFeeWei) {
+        const balFormatted = Number(ethers.formatEther(balanceWei)).toLocaleString();
+        const errStr = `Insufficient Mock USDT balance! You currently have ${balFormatted} USDT, but 100 USDT is required to create a Sub-ID. Please click "Claim 1,000 USDT Faucet" below.`;
+        setStatusMessage(`❌ ${errStr}`);
+        alert(`❌ ${errStr}`);
+        setIsSubmitting(false);
+        return;
+      }
+
       let allowance = await usdtContract.allowance(userAddr, CONTRACT_ADDRESSES.GROW50X_CORE);
       if (allowance < entryFeeWei) {
         setStatusMessage('Approving 100 USDT transfer...');
         const approveTx = await usdtContract.approve(CONTRACT_ADDRESSES.GROW50X_CORE, ethers.MaxUint256);
-        await approveTx.wait(2);
+        await approveTx.wait(1);
         allowance = await usdtContract.allowance(userAddr, CONTRACT_ADDRESSES.GROW50X_CORE);
         if (allowance < entryFeeWei) {
-          await new Promise((resolve) => setTimeout(resolve, 2000));
+          await new Promise((resolve) => setTimeout(resolve, 1500));
         }
       }
 
@@ -276,9 +343,8 @@ export default function SubIdsPage() {
         gasLimit = BigInt(380000);
       }
 
-
       const createTx = await coreContract.createSubId(manualSponsorId, pId, { gasLimit });
-      await createTx.wait();
+      await createTx.wait(1);
 
       setStatusMessage('🎉 Sub-ID successfully registered!');
       alert('🎉 Sub-ID registered successfully!');
@@ -287,7 +353,18 @@ export default function SubIdsPage() {
       await loadOwnedIds();
     } catch (err: any) {
       console.error('Single Sub-ID error:', err);
-      const msg = err.reason || err.message || 'Transaction failed';
+      let msg = err.reason;
+      if (!msg) {
+        if (err.code === 'ACTION_REJECTED' || err.message?.includes('user rejected')) {
+          msg = 'Transaction rejected by user in wallet.';
+        } else if (err.message?.includes('insufficient funds')) {
+          msg = 'Insufficient BNB balance for network gas fees!';
+        } else if (err.shortMessage) {
+          msg = err.shortMessage;
+        } else {
+          msg = 'Transaction execution reverted. Please check your wallet balance and placement details.';
+        }
+      }
       setStatusMessage(`❌ Error: ${msg}`);
       alert(`Error: ${msg}`);
     } finally {
@@ -312,6 +389,32 @@ export default function SubIdsPage() {
         >
           <span>🤖</span> View My Sub-IDs Directory
         </Link>
+      </div>
+
+      {/* Wallet Balance & Faucet Banner */}
+      <div className="bg-gradient-to-r from-slate-900 to-slate-800 p-5 rounded-3xl text-white shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4 border border-slate-700">
+        <div>
+          <span className="text-[10px] font-extrabold text-sky-400 uppercase tracking-widest">Testnet Wallet USDT Balance</span>
+          <div className="flex items-baseline gap-2 mt-0.5">
+            <span className="text-2xl font-black font-mono text-emerald-400">
+              {Number(usdtBalance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
+            </span>
+            {account && <span className="text-xs text-slate-400 font-mono">({account.slice(0, 6)}...{account.slice(-4)})</span>}
+          </div>
+          <p className="text-[11px] text-slate-400 mt-1">
+            Creating Sub-IDs requires 100 Mock USDT per Sub-ID on BSC Testnet.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleClaimFaucet}
+          disabled={isClaimingFaucet}
+          className="px-4 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black text-xs rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 self-start md:self-auto disabled:opacity-50"
+        >
+          <span>🪙</span>
+          <span>{isClaimingFaucet ? 'Minting 1,000 USDT...' : 'Claim 1,000 Mock USDT Faucet'}</span>
+        </button>
       </div>
 
       {statusMessage && (

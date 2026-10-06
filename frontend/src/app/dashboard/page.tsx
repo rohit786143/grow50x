@@ -454,21 +454,19 @@ function DashboardContent() {
         </div>
       )}
 
-      {/* ⏳ TOP SINGLE-LINE CALENDAR SHARE POOL TIMER (9th, 19th, 29th) */}
-      <div className="bg-slate-900 text-white px-4 py-3 rounded-2xl border border-slate-800 shadow-md flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs relative overflow-hidden">
+      {/* ⏳ TOP CONSOLIDATED 1-LINE TIMER & CLAIM BAR */}
+      <div className="bg-slate-900 text-white px-5 py-2.5 rounded-2xl border border-slate-800 shadow-md flex items-center justify-between gap-3 text-xs relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-sky-500/10 rounded-full blur-xl -z-0 pointer-events-none" />
 
-        <div className="flex flex-wrap items-center gap-2 relative z-10">
+        {/* Left: Next Cutoff */}
+        <div className="flex items-center gap-2 relative z-10 shrink-0">
           <span className="animate-pulse flex h-2 w-2 rounded-full bg-emerald-400" />
-          <span className="font-semibold text-slate-300 text-[11px] uppercase tracking-wider">
-            Share Pool #{periodId} (9th, 19th, 29th)
-          </span>
-          <span className="text-slate-700 hidden sm:inline">|</span>
-          <span className="text-slate-400 font-medium">Next Cutoff:</span>
-          <span className="text-emerald-400 font-bold">{nextCutoffDateStr || 'Calculating...'}</span>
+          <span className="text-slate-400 font-semibold text-xs">Next Cutoff:</span>
+          <span className="text-emerald-400 font-bold text-xs">{nextCutoffDateStr || 'Calculating...'}</span>
         </div>
 
-        <div className="flex items-center gap-1 font-mono text-xs font-bold bg-slate-800/90 px-3 py-1 rounded-xl border border-slate-700/70 relative z-10 self-start md:self-auto">
+        {/* Center: Live Countdown Timer */}
+        <div className="hidden sm:flex items-center gap-1 font-mono text-xs font-bold bg-slate-800/90 px-3 py-1.5 rounded-xl border border-slate-700/70 relative z-10">
           <span className="text-sky-400">{String(timeLeft.days).padStart(2, '0')}d</span>
           <span className="text-slate-600">:</span>
           <span className="text-sky-400">{String(timeLeft.hours).padStart(2, '0')}h</span>
@@ -478,31 +476,26 @@ function DashboardContent() {
           <span className="text-emerald-400 animate-pulse">{String(timeLeft.seconds).padStart(2, '0')}s</span>
         </div>
 
-        <div className="flex items-center gap-3 relative z-10 self-end md:self-auto">
-          <div className="text-right text-[11px]">
-            <span className="text-slate-400">Pool: </span>
-            <strong className="text-emerald-400 font-bold">${sharePoolBal.toFixed(2)} USDT</strong>
-          </div>
+        {/* Right: CLAIM ALL INCOME Button */}
+        <div className="flex items-center gap-2 relative z-10 shrink-0">
+          <button
+            onClick={handleClaimAllUserIncome}
+            disabled={isClaiming || (totalUnclaimed === 0 && claimingCategory !== 'all')}
+            className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 disabled:opacity-50 text-white px-4 py-2 rounded-xl font-extrabold text-xs uppercase tracking-wider transition-all shadow-md shadow-emerald-500/20 flex items-center gap-1.5 hover:scale-105 active:scale-95"
+            title="Claim all pending Share, Direct, Level, and Board Income across Main ID and all Sub-IDs in 1 transaction"
+          >
+            <span>⚡</span> {claimingCategory === 'all' ? 'Claiming All...' : `CLAIM ALL INCOME ${totalUnclaimed > 0 ? `($${totalUnclaimed.toFixed(2)})` : ''}`}
+          </button>
 
-          <div className="flex items-center gap-1.5">
+          {timeLeft.totalSec === 0 && (
             <button
-              onClick={handleClaimShareIncome}
-              disabled={isClaiming}
-              className="bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white px-3 py-1.5 rounded-xl font-bold text-[11px] uppercase tracking-wider transition-all shadow-sm flex items-center gap-1"
+              onClick={handleFinalizePeriod}
+              disabled={isFinalizing}
+              className="bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white px-3 py-2 rounded-xl font-bold text-xs uppercase tracking-wider transition-all shadow-sm"
             >
-              {isClaiming ? 'Claiming...' : '💰 Claim Share'}
+              {isFinalizing ? 'Finalizing...' : '⚡ Finalize'}
             </button>
-
-            {timeLeft.totalSec === 0 && (
-              <button
-                onClick={handleFinalizePeriod}
-                disabled={isFinalizing}
-                className="bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white px-3 py-1.5 rounded-xl font-bold text-[11px] uppercase tracking-wider transition-all shadow-sm"
-              >
-                {isFinalizing ? 'Finalizing...' : '⚡ Finalize'}
-              </button>
-            )}
-          </div>
+          )}
         </div>
       </div>
 
@@ -637,101 +630,35 @@ function DashboardContent() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {/* Card 1: Direct Sponsor Income */}
-          <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm border-l-4 border-l-sky-500 flex flex-col justify-between space-y-3">
-            <div>
-              <span className="text-xs text-slate-500 uppercase font-semibold">Direct Sponsor Income</span>
-              <p className="text-xl sm:text-2xl font-black text-sky-600 mt-1">
-                ${directIncome.toFixed(2)} <span className="text-xs font-normal text-slate-400">USDT</span>
-              </p>
-            </div>
-            {unclaimedDirect > 0 ? (
-              <button
-                onClick={handleClaimDirectIncome}
-                disabled={Boolean(claimingCategory)}
-                className="w-full bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white font-bold py-2 px-3 rounded-xl text-xs transition-all shadow-sm flex items-center justify-center gap-1"
-              >
-                <span>💰</span> {claimingCategory === 'direct' ? 'Claiming...' : `Claim $${unclaimedDirect.toFixed(2)} Direct`}
-              </button>
-            ) : (
-              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200 text-center inline-block">
-                ⚡ Instant Transfer to Wallet
-              </span>
-            )}
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm border-l-4 border-l-sky-500">
+            <span className="text-xs text-slate-500 uppercase font-semibold">Direct Sponsor Income</span>
+            <p className="text-2xl font-black text-sky-600 mt-2">
+              ${directIncome.toFixed(2)} <span className="text-xs font-normal text-slate-400">USDT</span>
+            </p>
           </div>
 
           {/* Card 2: 10-Day Share Pool */}
-          <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm border-l-4 border-l-emerald-500 flex flex-col justify-between space-y-3">
-            <div>
-              <span className="text-xs text-slate-500 uppercase font-semibold">10-Day Share Pool</span>
-              <p className="text-xl sm:text-2xl font-black text-emerald-600 mt-1">
-                ${shareIncome.toFixed(2)} <span className="text-xs font-normal text-slate-400">USDT</span>
-              </p>
-            </div>
-            {unclaimedShareIncome > 0 ? (
-              <button
-                onClick={handleClaimShareIncome}
-                disabled={Boolean(claimingCategory)}
-                className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-bold py-2 px-3 rounded-xl text-xs transition-all shadow-sm flex items-center justify-center gap-1"
-              >
-                <span>🎁</span> {isClaiming ? 'Claiming...' : `Claim $${unclaimedShareIncome.toFixed(2)} Share`}
-              </button>
-            ) : (
-              <span className="text-[10px] font-bold text-slate-500 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200 text-center inline-block">
-                Accumulating Pool Dividends
-              </span>
-            )}
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm border-l-4 border-l-emerald-500">
+            <span className="text-xs text-slate-500 uppercase font-semibold">10-Day Share Pool</span>
+            <p className="text-2xl font-black text-emerald-600 mt-2">
+              ${shareIncome.toFixed(2)} <span className="text-xs font-normal text-slate-400">USDT</span>
+            </p>
           </div>
 
           {/* Card 3: Sub-ID Level Income */}
-          <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm border-l-4 border-l-indigo-500 flex flex-col justify-between space-y-3">
-            <div>
-              <span className="text-xs text-slate-500 uppercase font-semibold">Sub-ID Level Income</span>
-              <p className="text-xl sm:text-2xl font-black text-indigo-600 mt-1">
-                ${levelIncome.toFixed(2)} <span className="text-xs font-normal text-slate-400">USDT</span>
-              </p>
-            </div>
-            {unclaimedLevel > 0 ? (
-              <button
-                onClick={handleClaimLevelIncome}
-                disabled={Boolean(claimingCategory)}
-                className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold py-2 px-3 rounded-xl text-xs transition-all shadow-sm flex items-center justify-center gap-1"
-              >
-                <span>⚡</span> {claimingCategory === 'level' ? 'Claiming...' : `Claim $${unclaimedLevel.toFixed(2)} Level`}
-              </button>
-            ) : (
-              <span className="text-[10px] font-bold text-slate-500 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200 text-center inline-block">
-                No Unclaimed Balance
-              </span>
-            )}
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm border-l-4 border-l-indigo-500">
+            <span className="text-xs text-slate-500 uppercase font-semibold">Sub-ID Level Income</span>
+            <p className="text-2xl font-black text-indigo-600 mt-2">
+              ${levelIncome.toFixed(2)} <span className="text-xs font-normal text-slate-400">USDT</span>
+            </p>
           </div>
 
           {/* Card 4: Board Completion Rewards */}
-          <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm border-l-4 border-l-purple-500 flex flex-col justify-between space-y-3">
-            <div>
-              <span className="text-xs text-slate-500 uppercase font-semibold">Board Completion Rewards</span>
-              <p className="text-xl sm:text-2xl font-black text-purple-600 mt-1">
-                ${boardRewards.toFixed(2)} <span className="text-xs font-normal text-slate-400">USDT</span>
-              </p>
-            </div>
-            {unclaimedBoardRewards > 0 || (boardRewards > 0 && unclaimedBoardRewards === 0) ? (
-              unclaimedBoardRewards > 0 ? (
-                <button
-                  onClick={handleClaimBoardRewards}
-                  disabled={Boolean(claimingCategory)}
-                  className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:opacity-50 text-white font-extrabold py-2 px-3 rounded-xl text-xs transition-all shadow-md flex items-center justify-center gap-1.5 animate-pulse hover:animate-none"
-                >
-                  <span>🏆</span> {claimingCategory === 'board' ? 'Claiming...' : `Claim $${unclaimedBoardRewards.toFixed(2)} Reward`}
-                </button>
-              ) : (
-                <span className="text-[10px] font-bold text-purple-700 bg-purple-50 px-2.5 py-1 rounded-lg border border-purple-200 text-center inline-block">
-                  ✓ Claimed / Paid to Wallet
-                </span>
-              )
-            ) : (
-              <span className="text-[10px] font-bold text-slate-500 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200 text-center inline-block">
-                Complete Board to Earn
-              </span>
-            )}
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm border-l-4 border-l-purple-500">
+            <span className="text-xs text-slate-500 uppercase font-semibold">Board Completion Rewards</span>
+            <p className="text-2xl font-black text-purple-600 mt-2">
+              ${boardRewards.toFixed(2)} <span className="text-xs font-normal text-slate-400">USDT</span>
+            </p>
           </div>
         </div>
       </div>
