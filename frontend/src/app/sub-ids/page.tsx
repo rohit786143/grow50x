@@ -195,8 +195,8 @@ export default function SubIdsPage() {
       // 1. Check Allowance
       let allowance = await usdtContract.allowance(userAddr, CONTRACT_ADDRESSES.GROW50X_CORE);
       if (allowance < totalCostWei) {
-        setStatusMessage('Approving USDT transfer (Step 1/2)...');
-        const approveTx = await usdtContract.approve(CONTRACT_ADDRESSES.GROW50X_CORE, ethers.MaxUint256);
+        setStatusMessage(`Approving ${totalBatchCost} USDT transfer (Step 1/2)...`);
+        const approveTx = await usdtContract.approve(CONTRACT_ADDRESSES.GROW50X_CORE, totalCostWei);
         await approveTx.wait(1);
         allowance = await usdtContract.allowance(userAddr, CONTRACT_ADDRESSES.GROW50X_CORE);
         if (allowance < totalCostWei) {
@@ -295,7 +295,7 @@ export default function SubIdsPage() {
       let allowance = await usdtContract.allowance(userAddr, CONTRACT_ADDRESSES.GROW50X_CORE);
       if (allowance < entryFeeWei) {
         setStatusMessage('Approving 100 USDT transfer...');
-        const approveTx = await usdtContract.approve(CONTRACT_ADDRESSES.GROW50X_CORE, ethers.MaxUint256);
+        const approveTx = await usdtContract.approve(CONTRACT_ADDRESSES.GROW50X_CORE, entryFeeWei);
         await approveTx.wait(1);
         allowance = await usdtContract.allowance(userAddr, CONTRACT_ADDRESSES.GROW50X_CORE);
         if (allowance < entryFeeWei) {

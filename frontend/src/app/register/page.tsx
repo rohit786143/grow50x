@@ -179,7 +179,8 @@ function RegisterFormContent() {
       const signer = await provider.getSigner();
       const usdtContract = new ethers.Contract(CONTRACT_ADDRESSES.USDT, MOCK_USDT_ABI, signer);
 
-      const approveTx = await usdtContract.approve(CONTRACT_ADDRESSES.GROW50X_CORE, ethers.MaxUint256);
+      const entryFeeWei = ethers.parseEther('100');
+      const approveTx = await usdtContract.approve(CONTRACT_ADDRESSES.GROW50X_CORE, entryFeeWei);
       setStatusMessage('⏳ Confirming USDT Approval on BNB Smart Chain blockchain...');
       await approveTx.wait(1);
       
@@ -434,68 +435,79 @@ function RegisterFormContent() {
           )}
 
           <form onSubmit={handleRegister} className="space-y-5">
-            {!isFirstUser && (
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">
-                  Sponsor ID <span className="text-sky-600">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={sponsorInput}
-                  onChange={(e) => setSponsorInput(e.target.value.toUpperCase())}
-                  placeholder="e.g. GR363306 or 363306"
-                  required
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 font-mono focus:outline-none focus:border-sky-500"
-                />
-                <p className="text-[11px] text-slate-500 mt-1">Type Sponsor ID with or without GR prefix (e.g. GR363306 or 363306).</p>
+            {!isFirstUser ? (
+              <>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">
+                    Sponsor ID <span className="text-sky-600">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={sponsorInput}
+                    onChange={(e) => setSponsorInput(e.target.value.toUpperCase())}
+                    placeholder="e.g. GR363306 or 363306"
+                    required
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 font-mono focus:outline-none focus:border-sky-500"
+                  />
+                  <p className="text-[11px] text-slate-500 mt-1">Type Sponsor ID with or without GR prefix (e.g. GR363306 or 363306).</p>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide">
+                      Placement ID <span className="text-slate-400 font-normal">(Optional)</span>
+                    </label>
+                    {placementStatus.isChecking ? (
+                      <span className="text-[10px] font-bold text-sky-600 bg-sky-50 px-2 py-0.5 rounded-full animate-pulse border border-sky-200">
+                        ⏳ Checking Eligibility...
+                      </span>
+                    ) : placementInput.trim() && placementInput.trim() !== '0' ? (
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                        placementStatus.isEligible 
+                          ? 'text-emerald-700 bg-emerald-50 border-emerald-300' 
+                          : 'text-rose-700 bg-rose-50 border-rose-300'
+                      }`}>
+                        {placementStatus.isEligible ? '✓ Eligible' : '❌ Not Eligible for placement Id'}
+                      </span>
+                    ) : null}
+                  </div>
+                  <input
+                    type="text"
+                    value={placementInput}
+                    onChange={(e) => setPlacementInput(e.target.value.toUpperCase())}
+                    placeholder="0 (Auto Placement)"
+                    className={`w-full bg-slate-50 border rounded-xl px-4 py-3 text-sm text-slate-900 font-mono focus:outline-none transition-all ${
+                      placementInput.trim() && placementInput.trim() !== '0'
+                        ? placementStatus.isEligible
+                          ? 'border-emerald-400 focus:border-emerald-500 bg-emerald-50/20'
+                          : 'border-rose-400 focus:border-rose-500 bg-rose-50/20'
+                        : 'border-slate-200 focus:border-sky-500'
+                    }`}
+                  />
+                  {placementStatus.message ? (
+                    <div className={`mt-2 p-2.5 rounded-xl border text-xs font-bold flex items-center gap-2 ${
+                      placementStatus.isEligible
+                        ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                        : 'bg-rose-50 border-rose-300 text-rose-800 animate-shake'
+                    }`}>
+                      <span>{placementStatus.isEligible ? '✅' : '🚨'}</span>
+                      <span>{placementStatus.message}</span>
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-slate-500 mt-1">Leave blank or 0 for protocol automatic TOP → BOTTOM, LEFT → RIGHT placement.</p>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="p-4 bg-amber-50 rounded-2xl border border-amber-300 text-amber-900 text-xs space-y-1">
+                <div className="flex items-center gap-2 font-black text-amber-950 text-sm">
+                  <span>👑 Protocol Root Registration</span>
+                </div>
+                <p className="text-amber-800 leading-relaxed font-semibold">
+                  You are registering as the <strong>1st Root User (GR1)</strong> of the protocol. No Sponsor ID or Placement ID is required or applicable for Root User.
+                </p>
               </div>
             )}
-
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide">
-                  Placement ID <span className="text-slate-400 font-normal">(Optional)</span>
-                </label>
-                {placementStatus.isChecking ? (
-                  <span className="text-[10px] font-bold text-sky-600 bg-sky-50 px-2 py-0.5 rounded-full animate-pulse border border-sky-200">
-                    ⏳ Checking Eligibility...
-                  </span>
-                ) : placementInput.trim() && placementInput.trim() !== '0' ? (
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                    placementStatus.isEligible 
-                      ? 'text-emerald-700 bg-emerald-50 border-emerald-300' 
-                      : 'text-rose-700 bg-rose-50 border-rose-300'
-                  }`}>
-                    {placementStatus.isEligible ? '✓ Eligible' : '❌ Not Eligible for placement Id'}
-                  </span>
-                ) : null}
-              </div>
-              <input
-                type="text"
-                value={placementInput}
-                onChange={(e) => setPlacementInput(e.target.value.toUpperCase())}
-                placeholder="0 (Auto Placement)"
-                className={`w-full bg-slate-50 border rounded-xl px-4 py-3 text-sm text-slate-900 font-mono focus:outline-none transition-all ${
-                  placementInput.trim() && placementInput.trim() !== '0'
-                    ? placementStatus.isEligible
-                      ? 'border-emerald-400 focus:border-emerald-500 bg-emerald-50/20'
-                      : 'border-rose-400 focus:border-rose-500 bg-rose-50/20'
-                    : 'border-slate-200 focus:border-sky-500'
-                }`}
-              />
-              {placementStatus.message ? (
-                <div className={`mt-2 p-2.5 rounded-xl border text-xs font-bold flex items-center gap-2 ${
-                  placementStatus.isEligible
-                    ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
-                    : 'bg-rose-50 border-rose-300 text-rose-800 animate-shake'
-                }`}>
-                  <span>{placementStatus.isEligible ? '✅' : '🚨'}</span>
-                  <span>{placementStatus.message}</span>
-                </div>
-              ) : (
-                <p className="text-[11px] text-slate-500 mt-1">Leave blank or 0 for protocol automatic TOP → BOTTOM, LEFT → RIGHT placement.</p>
-              )}
-            </div>
 
             <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2 text-xs">
               <div className="flex justify-between text-slate-600">
@@ -549,7 +561,7 @@ function RegisterFormContent() {
                 className="w-full btn-primary-emerald py-4 rounded-xl font-bold text-base shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
               >
                 <span>🔑</span>
-                {isSubmitting ? 'Confirming USDT Approval in MetaMask...' : 'Step 1/2: Approve 100 USDT in MetaMask'}
+                {isSubmitting ? 'Confirming USDT Approval in Wallet...' : 'Step 1/2: Approve 100 USDT'}
               </button>
             ) : (
               <button
@@ -559,7 +571,7 @@ function RegisterFormContent() {
               >
                 <span>🚀</span>
                 {isSubmitting
-                  ? 'Confirming Registration in MetaMask...'
+                  ? 'Confirming Registration in Wallet...'
                   : isFirstUser
                   ? 'Step 2/2: Register 1st Root User (100 USDT)'
                   : 'Step 2/2: Register Main ID (100 USDT)'}
