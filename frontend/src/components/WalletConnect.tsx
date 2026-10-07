@@ -7,6 +7,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { CONTRACT_ADDRESSES, MOCK_USDT_ABI, BSC_TESTNET_CHAIN_ID, isAdminWallet, getAdminIndex, ensureBscTestnetChain } from '../config/contracts';
 import { useWeb3 } from '../context/Web3Context';
 import WalletModal from './WalletModal';
+import { UsdtIcon, BnbIcon } from './CryptoIcons';
 
 export default function WalletConnect() {
   const router = useRouter();
@@ -201,10 +202,16 @@ export default function WalletConnect() {
 
           {/* Balance Badge */}
           {chainId === BSC_TESTNET_CHAIN_ID && (
-            <div className="hidden md:flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 text-xs">
-              <span className="text-emerald-600 font-bold">${usdtBalance} USDT</span>
+            <div className="hidden md:flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 text-xs shadow-sm">
+              <span className="text-emerald-700 font-bold flex items-center gap-1.5">
+                <UsdtIcon className="w-4 h-4" />
+                ${usdtBalance} USDT
+              </span>
               <span className="text-slate-300">|</span>
-              <span className="text-slate-600 font-mono font-semibold">{bnbBalance} BNB</span>
+              <span className="text-slate-700 font-mono font-bold flex items-center gap-1.5">
+                <BnbIcon className="w-4 h-4" />
+                {bnbBalance} BNB
+              </span>
             </div>
           )}
 

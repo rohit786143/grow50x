@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useWeb3 } from '../context/Web3Context';
 
+import { UsdtIcon, BnbIcon } from './CryptoIcons';
+
 interface PlanPresentationProps {
   onConnectWallet?: () => void;
   title?: string;
@@ -41,12 +43,12 @@ export default function PlanPresentation({ onConnectWallet, title, subtitle }: P
         <div className="absolute -bottom-24 -right-24 w-80 h-80 bg-emerald-400/20 rounded-full blur-3xl animate-pulse-glow pointer-events-none" style={{ animationDelay: '1.5s' }} />
 
         {/* Floating Crypto Coin Badges */}
-        <div className="absolute top-8 left-8 lg:left-16 animate-float-slow hidden sm:flex items-center gap-2 bg-white/90 backdrop-blur-md px-3.5 py-2 rounded-2xl border border-slate-200 shadow-lg font-bold text-xs text-emerald-600">
-          <span className="text-xl">💵</span> USDT BEP-20
+        <div className="absolute top-8 left-8 lg:left-16 animate-float-slow hidden sm:flex items-center gap-2 bg-white/90 backdrop-blur-md px-3.5 py-2 rounded-2xl border border-slate-200 shadow-lg font-bold text-xs text-emerald-700">
+          <UsdtIcon className="w-5 h-5 shadow-sm" /> USDT BEP-20
         </div>
 
-        <div className="absolute top-12 right-8 lg:right-16 animate-float-fast hidden sm:flex items-center gap-2 bg-white/90 backdrop-blur-md px-3.5 py-2 rounded-2xl border border-slate-200 shadow-lg font-bold text-xs text-amber-600">
-          <span className="text-xl">🟡</span> BNB Smart Chain
+        <div className="absolute top-12 right-8 lg:right-16 animate-float-fast hidden sm:flex items-center gap-2 bg-white/90 backdrop-blur-md px-3.5 py-2 rounded-2xl border border-slate-200 shadow-lg font-bold text-xs text-amber-700">
+          <BnbIcon className="w-5 h-5 shadow-sm" /> BNB Smart Chain
         </div>
 
         <div className="absolute bottom-12 left-12 animate-float-fast hidden lg:flex items-center gap-2 bg-white/90 backdrop-blur-md px-3.5 py-2 rounded-2xl border border-slate-200 shadow-lg font-bold text-xs text-sky-600">
