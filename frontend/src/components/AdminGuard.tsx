@@ -10,7 +10,7 @@ interface AdminGuardProps {
 }
 
 export default function AdminGuard({ children }: AdminGuardProps) {
-  const { account, connectWallet, isLoading } = useWeb3();
+  const { account, connectWallet, isLoading, openWalletModal } = useWeb3();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   
   // 2-Step Auth State
@@ -313,7 +313,7 @@ export default function AdminGuard({ children }: AdminGuardProps) {
 
               <button
                 type="button"
-                onClick={() => setIsWalletModalOpen(true)}
+                onClick={openWalletModal}
                 className="w-full bg-slate-200 hover:bg-slate-300 text-slate-800 border border-slate-300 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-sm"
               >
                 <span>👛</span> {account ? 'Switch Wallet' : 'Connect Web3 Wallet'}
@@ -345,13 +345,6 @@ export default function AdminGuard({ children }: AdminGuardProps) {
           </div>
         )}
       </div>
-
-      <WalletModal
-        isOpen={isWalletModalOpen}
-        onClose={() => setIsWalletModalOpen(false)}
-        onSelectWallet={handleSelectWallet}
-        isLoading={isLoading}
-      />
     </div>
   );
 }

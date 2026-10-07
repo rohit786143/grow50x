@@ -13,7 +13,7 @@ interface PlanPresentationProps {
 
 export default function PlanPresentation({ onConnectWallet, title, subtitle }: PlanPresentationProps) {
   const router = useRouter();
-  const { account, mainUserId, isRegistered, connectWallet } = useWeb3();
+  const { account, mainUserId, isRegistered, openWalletModal } = useWeb3();
 
   const handleConnectClick = async () => {
     if (account && isRegistered) {
@@ -21,19 +21,7 @@ export default function PlanPresentation({ onConnectWallet, title, subtitle }: P
     } else if (account && !isRegistered) {
       router.push('/register');
     } else {
-      const btn = document.getElementById('connect-wallet-btn');
-      if (btn) {
-        btn.click();
-      } else {
-        const res = await connectWallet();
-        if (res && res.success) {
-          if (res.isRegistered) {
-            router.push('/dashboard');
-          } else {
-            router.push('/register');
-          }
-        }
-      }
+      openWalletModal();
     }
   };
 

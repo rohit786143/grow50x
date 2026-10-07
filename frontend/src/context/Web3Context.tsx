@@ -2,7 +2,8 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { ethers } from 'ethers';
-import { CONTRACT_ADDRESSES, MOCK_USDT_ABI, GROW50X_CORE_ABI } from '../config/contracts';
+import { CONTRACT_ADDRESSES, MOCK_USDT_ABI, GROW50X_CORE_ABI, isAdminWallet } from '../config/contracts';
+import WalletModal from '../components/WalletModal';
 
 export interface OwnedIdItem {
   id: number;
@@ -30,6 +31,9 @@ interface Web3ContextType {
   bnbBalance: string;
   chainId: number | null;
   isLoading: boolean;
+  isWalletModalOpen: boolean;
+  openWalletModal: () => void;
+  closeWalletModal: () => void;
   connectWallet: (customProvider?: any) => Promise<ConnectWalletResult>;
   disconnectWallet: () => void;
   refreshWeb3State: () => Promise<void>;
@@ -47,6 +51,9 @@ const Web3Context = createContext<Web3ContextType>({
   bnbBalance: '0',
   chainId: null,
   isLoading: true,
+  isWalletModalOpen: false,
+  openWalletModal: () => {},
+  closeWalletModal: () => {},
   connectWallet: async (customProvider?: any) => ({ success: false, account: null, isRegistered: false, mainUserId: 0 }),
   disconnectWallet: () => {},
   refreshWeb3State: async () => {},
@@ -62,6 +69,10 @@ export function Web3Provider({ children }: { children: ReactNode }) {
   const [bnbBalance, setBnbBalance] = useState<string>('0');
   const [chainId, setChainId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isWalletModalOpen, setIsWalletModalOpen] = useState<boolean>(false);
+
+  const openWalletModal = () => setIsWalletModalOpen(true);
+  const closeWalletModal = () => setIsWalletModalOpen(false);
 
   useEffect(() => {
     checkInitialConnection();
@@ -183,7 +194,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
     const providerToUse = customProvider || (typeof window !== 'undefined' ? (window as any).ethereum : null);
 
     if (!providerToUse) {
-      alert('Web3 Wallet provider not detected. Please install a Web3 wallet extension such as MetaMask.');
+      alert('Web3 Wallet provider not detected. Please install a Web3 wallet extension such as MetaMask, Trust Wallet, or Coinbase Wallet.');
       return { success: false, account: null, isRegistered: false, mainUserId: 0 };
     }
 
@@ -206,6 +217,52 @@ export function Web3Provider({ children }: { children: ReactNode }) {
       throw err;
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleSelectWalletFromModal = async (walletKey: string) => {
+    if (typeof window === 'undefined') return;
+
+    const currentUrl = window.location.href;
+    const domain = window.location.host;
+    const providers = (window as any).ethereum?.providers || [];
+    let targetProvider: any = null;
+
+    if (walletKey === 'metamask') {
+      targetProvider = providers.find((p: any) => p.isMetaMask) || ((window as any).ethereum?.isMetaMask ? (window as any).ethereum : null) || (window as any).ethereum;
+      if (!targetProvider) {
+        window.open(`https://metamask.app.link/dapp/${domain}`, '_blank');
+        setIsWalletModalOpen(false);
+        return;
+      }
+    } else if (walletKey === 'trust') {
+      targetProvider = (window as any).trustwallet || providers.find((p: any) => p.isTrust) || ((window as any).ethereum?.isTrust ? (window as any).ethereum : null);
+      if (!targetProvider) {
+        window.open(`https://link.trustwallet.com/open_url?coin_id=60&url=${encodeURIComponent(currentUrl)}`, '_blank');
+        setIsWalletModalOpen(false);
+        return;
+      }
+    } else if (walletKey === 'coinbase') {
+      targetProvider = (window as any).coinbaseWalletExtension || providers.find((p: any) => p.isCoinbaseWallet) || ((window as any).ethereum?.isCoinbaseWallet ? (window as any).ethereum : null);
+      if (!targetProvider) {
+        window.open(`https://go.cb-wallet.com/dapp?cb_url=${encodeURIComponent(currentUrl)}`, '_blank');
+        setIsWalletModalOpen(false);
+        return;
+      }
+    } else {
+      targetProvider = (window as any).ethereum;
+      if (!targetProvider) {
+        window.open(`https://metamask.app.link/dapp/${domain}`, '_blank');
+        setIsWalletModalOpen(false);
+        return;
+      }
+    }
+
+    try {
+      await connectWallet(targetProvider);
+      setIsWalletModalOpen(false);
+    } catch (err: any) {
+      console.error('Modal wallet connect error:', err);
     }
   };
 
@@ -233,12 +290,21 @@ export function Web3Provider({ children }: { children: ReactNode }) {
         bnbBalance,
         chainId,
         isLoading,
+        isWalletModalOpen,
+        openWalletModal,
+        closeWalletModal,
         connectWallet,
         disconnectWallet,
         refreshWeb3State,
       }}
     >
       {children}
+      <WalletModal
+        isOpen={isWalletModalOpen}
+        onClose={closeWalletModal}
+        onSelectWallet={handleSelectWalletFromModal}
+        isLoading={isLoading}
+      />
     </Web3Context.Provider>
   );
 }

@@ -11,87 +11,13 @@ import WalletModal from './WalletModal';
 export default function WalletConnect() {
   const router = useRouter();
   const pathname = usePathname();
-  const { account, isRegistered, usdtBalance, bnbBalance, chainId, isLoading, connectWallet, disconnectWallet, refreshWeb3State } = useWeb3();
+  const { account, isRegistered, usdtBalance, bnbBalance, chainId, isLoading, openWalletModal, disconnectWallet, refreshWeb3State } = useWeb3();
   const [isClaimingFaucet, setIsClaimingFaucet] = useState<boolean>(false);
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
   const adminIdx = getAdminIndex(account);
   const isAdmin = adminIdx > 0;
 
   const BSC_TESTNET_HEX_CHAIN_ID = '0x61'; // 97 in decimal
-
-  const handleOpenModal = () => {
-    setIsModalOpen(true);
-  };
-
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-  };
-
-  const handleSelectWallet = async (walletKey: string) => {
-    if (typeof window === 'undefined') return;
-
-    const currentUrl = window.location.href;
-    const domain = window.location.host;
-
-    const providers = (window as any).ethereum?.providers || [];
-    let targetProvider: any = null;
-
-    if (walletKey === 'metamask') {
-      targetProvider = providers.find((p: any) => p.isMetaMask) || ((window as any).ethereum?.isMetaMask ? (window as any).ethereum : null) || (window as any).ethereum;
-      if (!targetProvider) {
-        window.open(`https://metamask.app.link/dapp/${domain}`, '_blank');
-        setIsModalOpen(false);
-        return;
-      }
-    } else if (walletKey === 'trust') {
-      targetProvider = (window as any).trustwallet || providers.find((p: any) => p.isTrust) || ((window as any).ethereum?.isTrust ? (window as any).ethereum : null);
-      if (!targetProvider) {
-        window.open(`https://link.trustwallet.com/open_url?coin_id=60&url=${encodeURIComponent(currentUrl)}`, '_blank');
-        setIsModalOpen(false);
-        return;
-      }
-    } else if (walletKey === 'coinbase') {
-      targetProvider = (window as any).coinbaseWalletExtension || providers.find((p: any) => p.isCoinbaseWallet) || ((window as any).ethereum?.isCoinbaseWallet ? (window as any).ethereum : null);
-      if (!targetProvider) {
-        window.open(`https://go.cb-wallet.com/dapp?cb_url=${encodeURIComponent(currentUrl)}`, '_blank');
-        setIsModalOpen(false);
-        return;
-      }
-    } else if (walletKey === 'rainbow') {
-      targetProvider = providers.find((p: any) => p.isRainbow) || ((window as any).ethereum?.isRainbow ? (window as any).ethereum : null);
-      if (!targetProvider) {
-        window.open(`https://rainbow.me/`, '_blank');
-        setIsModalOpen(false);
-        return;
-      }
-    } else {
-      targetProvider = (window as any).ethereum;
-      if (!targetProvider) {
-        window.open(`https://metamask.app.link/dapp/${domain}`, '_blank');
-        setIsModalOpen(false);
-        return;
-      }
-    }
-
-    try {
-      const res = await connectWallet(targetProvider);
-      setIsModalOpen(false);
-
-      if (res && res.success && res.account) {
-        if (isAdminWallet(res.account)) {
-          router.push('/admin');
-        } else if (res.isRegistered) {
-          router.push('/dashboard');
-        } else {
-          router.push('/register');
-        }
-      }
-
-    } catch (err: any) {
-      console.error('Wallet connection error:', err);
-    }
-  };
 
   const handleLogout = () => {
     disconnectWallet();
@@ -182,7 +108,7 @@ export default function WalletConnect() {
       {!account ? (
         /* Case 1: Wallet NOT Connected */
         <button
-          onClick={handleOpenModal}
+          onClick={openWalletModal}
           disabled={isLoading}
           id="connect-wallet-btn"
           className="btn-primary-blue px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl font-bold text-xs sm:text-sm shadow-md flex items-center gap-2 hover:scale-[1.02] transition-all"
@@ -301,14 +227,6 @@ export default function WalletConnect() {
           </button>
         </div>
       )}
-
-      {/* Wallet Selector Modal Pop-up */}
-      <WalletModal
-        isOpen={isModalOpen}
-        onClose={handleCloseModal}
-        onSelectWallet={handleSelectWallet}
-        isLoading={isLoading}
-      />
     </>
   );
 }
