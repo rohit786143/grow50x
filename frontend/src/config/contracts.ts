@@ -88,3 +88,58 @@ export function isAdminWallet(address: string | null | undefined): boolean {
   return getAdminIndex(address) > 0;
 }
 
+/**
+ * Automatically checks and switches wallet network to BSC Testnet (Chain ID 97 / 0x61).
+ * Essential for Mobile DApp Browsers (MetaMask Mobile, Trust, Bitget) to avoid fallback to Ethereum Mainnet (0 ETH).
+ */
+export async function ensureBscTestnetChain(ethereumProvider?: any): Promise<boolean> {
+  if (typeof window === 'undefined') return false;
+  const ethereum = ethereumProvider || (window as any).ethereum;
+  if (!ethereum) return false;
+
+  const BSC_TESTNET_HEX_CHAIN_ID = '0x61'; // 97 in decimal
+
+  try {
+    const { ethers } = await import('ethers');
+    const provider = new ethers.BrowserProvider(ethereum);
+    const network = await provider.getNetwork();
+    if (Number(network.chainId) === BSC_TESTNET_CHAIN_ID) {
+      return true; // Already on BSC Testnet
+    }
+  } catch (e) {
+    console.warn('Network check warning:', e);
+  }
+
+  try {
+    await ethereum.request({
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId: BSC_TESTNET_HEX_CHAIN_ID }],
+    });
+    return true;
+  } catch (switchError: any) {
+    if (switchError.code === 4902 || switchError.code === -32603 || switchError.message?.includes('Unrecognized chain')) {
+      try {
+        await ethereum.request({
+          method: 'wallet_addEthereumChain',
+          params: [
+            {
+              chainId: BSC_TESTNET_HEX_CHAIN_ID,
+              chainName: 'BNB Smart Chain Testnet',
+              nativeCurrency: { name: 'tBNB', symbol: 'tBNB', decimals: 18 },
+              rpcUrls: ['https://data-seed-prebsc-1-s1.binance.org:8545/'],
+              blockExplorerUrls: ['https://testnet.bscscan.com/'],
+            },
+          ],
+        });
+        return true;
+      } catch (addError) {
+        console.error('Failed to add BSC Testnet chain:', addError);
+        return false;
+      }
+    }
+    console.error('Failed to switch to BSC Testnet chain:', switchError);
+    return false;
+  }
+}
+
+

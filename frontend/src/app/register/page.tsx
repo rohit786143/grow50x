@@ -3,7 +3,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { ethers } from 'ethers';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { CONTRACT_ADDRESSES, GROW50X_CORE_ABI, MOCK_USDT_ABI, isAdminWallet, getAdminIndex } from '../../config/contracts';
+import { CONTRACT_ADDRESSES, GROW50X_CORE_ABI, MOCK_USDT_ABI, isAdminWallet, getAdminIndex, ensureBscTestnetChain } from '../../config/contracts';
 import { useWeb3 } from '../../context/Web3Context';
 import { validatePlacementEligibility } from '../../utils/placementValidation';
 
@@ -145,8 +145,9 @@ function RegisterFormContent() {
   const handleClaimFaucet = async () => {
     if (typeof window === 'undefined' || !(window as any).ethereum || !account) return;
     setIsClaimingFaucet(true);
-    setStatusMessage('Minting 1,000 Free Testnet USDT to your wallet...');
+    setStatusMessage('Checking network and minting 1,000 Free Testnet USDT to your wallet...');
     try {
+      await ensureBscTestnetChain();
       const provider = new ethers.BrowserProvider((window as any).ethereum);
       const signer = await provider.getSigner();
       const usdtContract = new ethers.Contract(CONTRACT_ADDRESSES.USDT, MOCK_USDT_ABI, signer);
@@ -172,6 +173,7 @@ function RegisterFormContent() {
     setIsSubmitting(true);
     setStatusMessage('🔑 Step 1/2: Please click CONFIRM in your MetaMask popup to approve USDT...');
     try {
+      await ensureBscTestnetChain();
       const provider = new ethers.BrowserProvider((window as any).ethereum);
       const signer = await provider.getSigner();
       const usdtContract = new ethers.Contract(CONTRACT_ADDRESSES.USDT, MOCK_USDT_ABI, signer);
@@ -210,6 +212,7 @@ function RegisterFormContent() {
     setStatusMessage('Verifying USDT allowance on BSC Testnet...');
 
     try {
+      await ensureBscTestnetChain();
       const provider = new ethers.BrowserProvider((window as any).ethereum);
       const signer = await provider.getSigner();
       const usdtContract = new ethers.Contract(CONTRACT_ADDRESSES.USDT, MOCK_USDT_ABI, signer);

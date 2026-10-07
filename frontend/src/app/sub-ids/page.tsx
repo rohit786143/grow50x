@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ethers } from 'ethers';
-import { CONTRACT_ADDRESSES, GROW50X_CORE_ABI, MOCK_USDT_ABI } from '../../config/contracts';
+import { CONTRACT_ADDRESSES, GROW50X_CORE_ABI, MOCK_USDT_ABI, ensureBscTestnetChain } from '../../config/contracts';
 import { validatePlacementEligibility } from '../../utils/placementValidation';
 
 export default function SubIdsPage() {
@@ -127,8 +127,9 @@ export default function SubIdsPage() {
   const handleClaimFaucet = async () => {
     if (typeof window === 'undefined' || !(window as any).ethereum) return;
     setIsClaimingFaucet(true);
-    setStatusMessage('Claiming 1,000 Mock USDT from testnet faucet...');
+    setStatusMessage('Checking network and claiming 1,000 Mock USDT from testnet faucet...');
     try {
+      await ensureBscTestnetChain();
       const provider = new ethers.BrowserProvider((window as any).ethereum);
       const signer = await provider.getSigner();
       const usdtContract = new ethers.Contract(CONTRACT_ADDRESSES.USDT, MOCK_USDT_ABI, signer);
@@ -168,6 +169,7 @@ export default function SubIdsPage() {
     setStatusMessage(`Verifying USDT balance for ${batchCount} Sub-ID(s)...`);
 
     try {
+      await ensureBscTestnetChain();
       const provider = new ethers.BrowserProvider((window as any).ethereum);
       const signer = await provider.getSigner();
       const usdtContract = new ethers.Contract(CONTRACT_ADDRESSES.USDT, MOCK_USDT_ABI, signer);
@@ -267,6 +269,7 @@ export default function SubIdsPage() {
     setStatusMessage('Verifying USDT balance for 100 USDT Sub-ID creation...');
 
     try {
+      await ensureBscTestnetChain();
       const provider = new ethers.BrowserProvider((window as any).ethereum);
       const signer = await provider.getSigner();
       const usdtContract = new ethers.Contract(CONTRACT_ADDRESSES.USDT, MOCK_USDT_ABI, signer);

@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { ethers } from 'ethers';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { CONTRACT_ADDRESSES, MOCK_USDT_ABI, BSC_TESTNET_CHAIN_ID, isAdminWallet, getAdminIndex } from '../config/contracts';
+import { CONTRACT_ADDRESSES, MOCK_USDT_ABI, BSC_TESTNET_CHAIN_ID, isAdminWallet, getAdminIndex, ensureBscTestnetChain } from '../config/contracts';
 import { useWeb3 } from '../context/Web3Context';
 import WalletModal from './WalletModal';
 
@@ -133,6 +133,7 @@ export default function WalletConnect() {
     if (typeof window === 'undefined' || !(window as any).ethereum || !account) return;
     setIsClaimingFaucet(true);
     try {
+      await ensureBscTestnetChain();
       const provider = new ethers.BrowserProvider((window as any).ethereum);
       const signer = await provider.getSigner();
       const usdtContract = new ethers.Contract(CONTRACT_ADDRESSES.USDT, MOCK_USDT_ABI, signer);
@@ -154,6 +155,7 @@ export default function WalletConnect() {
   const addUsdtToMetaMask = async () => {
     if (typeof window === 'undefined' || !(window as any).ethereum) return;
     try {
+      await ensureBscTestnetChain();
       await (window as any).ethereum.request({
         method: 'wallet_watchAsset',
         params: {
