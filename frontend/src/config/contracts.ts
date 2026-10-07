@@ -90,24 +90,12 @@ export function isAdminWallet(address: string | null | undefined): boolean {
 
 export async function ensureBscTestnetChain(ethereumProvider?: any): Promise<boolean> {
   if (typeof window === 'undefined') return false;
-  const ethereum = ethereumProvider || (window as any).ethereum;
+  const ethereum = ethereumProvider || (window as any).trustwallet || (window as any).ethereum;
   if (!ethereum) return false;
 
   const BSC_TESTNET_HEX_CHAIN_ID = '0x61'; // 97 in decimal
 
-  // 1. Check current network chain ID
-  try {
-    const { ethers } = await import('ethers');
-    const provider = new ethers.BrowserProvider(ethereum);
-    const network = await provider.getNetwork();
-    if (Number(network.chainId) === BSC_TESTNET_CHAIN_ID) {
-      return true; // Already on BSC Testnet
-    }
-  } catch (e) {
-    console.warn('Network check warning:', e);
-  }
-
-  // 2. Request network switch to BSC Testnet (Prompt popup in Trust Wallet / MetaMask)
+  // 1. Force network switch RPC to trigger Trust Wallet / MetaMask mobile native modal update to BSC Testnet (97)
   try {
     await ethereum.request({
       method: 'wallet_switchEthereumChain',
@@ -115,7 +103,7 @@ export async function ensureBscTestnetChain(ethereumProvider?: any): Promise<boo
     });
     return true;
   } catch (switchError: any) {
-    // If switch fails (chain not added or custom wallet error in Trust Wallet), attempt adding network
+    // 2. If chain not added (Error 4902 / custom wallet error), attempt adding network
     try {
       await ethereum.request({
         method: 'wallet_addEthereumChain',
@@ -124,16 +112,28 @@ export async function ensureBscTestnetChain(ethereumProvider?: any): Promise<boo
             chainId: BSC_TESTNET_HEX_CHAIN_ID,
             chainName: 'BNB Smart Chain Testnet',
             nativeCurrency: { name: 'tBNB', symbol: 'tBNB', decimals: 18 },
-            rpcUrls: ['https://data-seed-prebsc-1-s1.binance.org:8545/'],
+            rpcUrls: [
+              'https://data-seed-prebsc-1-s1.binance.org:8545/',
+              'https://bsc-testnet.publicnode.com'
+            ],
             blockExplorerUrls: ['https://testnet.bscscan.com/'],
           },
         ],
       });
       return true;
     } catch (addError) {
-      console.error('Failed to add BSC Testnet chain to wallet:', addError);
-      return false;
+      console.warn('Network switch/add notice:', addError);
     }
+  }
+
+  // 3. Fallback verification
+  try {
+    const { ethers } = await import('ethers');
+    const provider = new ethers.BrowserProvider(ethereum);
+    const network = await provider.getNetwork();
+    return Number(network.chainId) === BSC_TESTNET_CHAIN_ID;
+  } catch (e) {
+    return false;
   }
 }
 
