@@ -357,44 +357,44 @@ function RegisterFormContent() {
       {!isRegistered && (
         <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm space-y-6">
           {/* 2-Step Registration Stepper Component */}
-          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-            <div className="flex items-center justify-between mb-2">
+          <div className="bg-slate-50 p-3.5 sm:p-4 rounded-xl border border-slate-200">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-2.5">
               <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Registration Progress</span>
               <span className="text-[11px] font-semibold text-slate-500">
                 {isApproved ? 'Step 2 of 2 (Ready)' : 'Step 1 of 2 (Action Required)'}
               </span>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
               {/* Step 1 Box */}
-              <div className={`p-3 rounded-lg border text-xs flex items-center justify-between ${
+              <div className={`p-3 rounded-xl border text-xs flex items-center justify-between gap-2 min-w-0 overflow-hidden ${
                 isApproved 
                   ? 'bg-emerald-50 border-emerald-300 text-emerald-900' 
-                  : 'bg-amber-50 border-amber-300 text-amber-900 animate-pulse'
+                  : 'bg-amber-50 border-amber-300 text-amber-900'
               }`}>
-                <div className="flex items-center gap-2">
-                  <span className={`w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px] ${
+                <div className="flex items-center gap-2 min-w-0 shrink">
+                  <span className={`w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px] shrink-0 ${
                     isApproved ? 'bg-emerald-600 text-white' : 'bg-amber-600 text-white'
                   }`}>1</span>
-                  <span className="font-bold">Approve 100 USDT</span>
+                  <span className="font-bold text-xs truncate">Approve 100 USDT</span>
                 </div>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/80 shadow-xs">
+                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-white/90 border border-slate-200/60 shadow-2xs shrink-0 whitespace-nowrap">
                   {isApproved ? '✓ Completed' : 'Pending'}
                 </span>
               </div>
 
               {/* Step 2 Box */}
-              <div className={`p-3 rounded-lg border text-xs flex items-center justify-between ${
+              <div className={`p-3 rounded-xl border text-xs flex items-center justify-between gap-2 min-w-0 overflow-hidden ${
                 isApproved 
                   ? 'bg-sky-50 border-sky-300 text-sky-900 font-bold' 
                   : 'bg-slate-100 border-slate-200 text-slate-400'
               }`}>
-                <div className="flex items-center gap-2">
-                  <span className={`w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px] ${
+                <div className="flex items-center gap-2 min-w-0 shrink">
+                  <span className={`w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px] shrink-0 ${
                     isApproved ? 'bg-sky-600 text-white' : 'bg-slate-300 text-slate-600'
                   }`}>2</span>
-                  <span>Register Main ID</span>
+                  <span className="font-bold text-xs truncate">Register Main ID</span>
                 </div>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/80 shadow-xs">
+                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-white/90 border border-slate-200/60 shadow-2xs shrink-0 whitespace-nowrap">
                   {isApproved ? 'Ready' : '🔒 Locked'}
                 </span>
               </div>
