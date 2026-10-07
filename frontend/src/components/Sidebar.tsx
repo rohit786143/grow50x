@@ -4,6 +4,7 @@ import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useWeb3 } from '../context/Web3Context';
+import { isAdminWallet } from '../config/contracts';
 
 interface SidebarProps {
   isMobileOpen?: boolean;
@@ -21,6 +22,7 @@ function SidebarInner({ isMobileOpen, onCloseMobile }: SidebarProps) {
   const [subIdMenuOpen, setSubIdMenuOpen] = useState<boolean>(true);
 
   const isAdminRoute = pathname?.startsWith('/admin');
+  const isAdminAuthenticated = typeof window !== 'undefined' && sessionStorage.getItem('grow50x_admin_session') === 'true' && account && isAdminWallet(account);
   const isActive = (path: string) => pathname === path;
 
   const isTransactionsRoute = pathname === '/transactions';
@@ -28,8 +30,11 @@ function SidebarInner({ isMobileOpen, onCloseMobile }: SidebarProps) {
   const isIncomeActive = isTransactionsRoute && viewParam !== 'deposits' && viewParam !== 'claimed';
   const isDepositsActive = isTransactionsRoute && viewParam === 'deposits';
 
-  // Render Admin Navigation Sidebar if on /admin route
+  // Render Admin Navigation Sidebar if on /admin route AND authenticated
   if (isAdminRoute) {
+    if (!isAdminAuthenticated) {
+      return null;
+    }
     const adminContent = (
       <div className="flex flex-col justify-between h-full min-h-screen">
         <div className="p-5 space-y-6">
