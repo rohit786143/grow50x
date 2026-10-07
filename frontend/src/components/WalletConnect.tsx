@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { ethers } from 'ethers';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { CONTRACT_ADDRESSES, MOCK_USDT_ABI, BSC_TESTNET_CHAIN_ID, isAdminWallet, getAdminIndex, ensureBscTestnetChain } from '../config/contracts';
+import { CONTRACT_ADDRESSES, MOCK_USDT_ABI, BSC_CHAIN_ID, isAdminWallet, getAdminIndex, ensureBscChain } from '../config/contracts';
 import { useWeb3 } from '../context/Web3Context';
 import WalletModal from './WalletModal';
 import { UsdtIcon, BnbIcon } from './CryptoIcons';
@@ -17,8 +17,7 @@ export default function WalletConnect() {
 
   const adminIdx = getAdminIndex(account);
   const isAdmin = adminIdx > 0;
-
-  const BSC_TESTNET_HEX_CHAIN_ID = '0x61'; // 97 in decimal
+  const isTestnet = chainId === 97;
 
   const handleLogout = () => {
     disconnectWallet();
@@ -26,41 +25,14 @@ export default function WalletConnect() {
   };
 
   const switchNetwork = async () => {
-    if (typeof window === 'undefined' || !(window as any).ethereum) return;
-    const ethereum = (window as any).ethereum;
-
-    try {
-      await ethereum.request({
-        method: 'wallet_switchEthereumChain',
-        params: [{ chainId: BSC_TESTNET_HEX_CHAIN_ID }],
-      });
-    } catch (switchError: any) {
-      if (switchError.code === 4902) {
-        try {
-          await ethereum.request({
-            method: 'wallet_addEthereumChain',
-            params: [
-              {
-                chainId: BSC_TESTNET_HEX_CHAIN_ID,
-                chainName: 'BNB Smart Chain Testnet',
-                nativeCurrency: { name: 'tBNB', symbol: 'tBNB', decimals: 18 },
-                rpcUrls: ['https://data-seed-prebsc-1-s1.binance.org:8545/'],
-                blockExplorerUrls: ['https://testnet.bscscan.com/'],
-              },
-            ],
-          });
-        } catch (addError) {
-          console.error('Error adding BSC Testnet network:', addError);
-        }
-      }
-    }
+    await ensureBscChain();
   };
 
   const claimFaucetUsdt = async () => {
     if (typeof window === 'undefined' || !(window as any).ethereum || !account) return;
     setIsClaimingFaucet(true);
     try {
-      await ensureBscTestnetChain();
+      await ensureBscChain();
       const provider = new ethers.BrowserProvider((window as any).ethereum);
       const signer = await provider.getSigner();
       const usdtContract = new ethers.Contract(CONTRACT_ADDRESSES.USDT, MOCK_USDT_ABI, signer);
@@ -82,7 +54,7 @@ export default function WalletConnect() {
   const addUsdtToMetaMask = async () => {
     if (typeof window === 'undefined' || !(window as any).ethereum) return;
     try {
-      await ensureBscTestnetChain();
+      await ensureBscChain();
       await (window as any).ethereum.request({
         method: 'wallet_watchAsset',
         params: {
@@ -156,19 +128,21 @@ export default function WalletConnect() {
             </Link>
           )}
 
-          {/* Faucet Button */}
-          <button
-            onClick={claimFaucetUsdt}
-            disabled={isClaimingFaucet}
-            className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold px-2.5 py-1.5 rounded-xl text-[11px] sm:text-xs border border-emerald-200 transition-colors flex items-center gap-1"
-            title="Claim 1,000 Free Testnet USDT"
-          >
-            <span>🎁</span>
-            <span className="hidden xs:inline">{isClaimingFaucet ? 'Claiming...' : 'Get 1,000 USDT'}</span>
-            <span className="xs:hidden">USDT</span>
-          </button>
+          {/* Testnet Faucet Button */}
+          {isTestnet && (
+            <button
+              onClick={claimFaucetUsdt}
+              disabled={isClaimingFaucet}
+              className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold px-2.5 py-1.5 rounded-xl text-[11px] sm:text-xs border border-emerald-200 transition-colors flex items-center gap-1"
+              title="Claim 1,000 Free Testnet USDT"
+            >
+              <span>🎁</span>
+              <span className="hidden xs:inline">{isClaimingFaucet ? 'Claiming...' : 'Get 1,000 USDT'}</span>
+              <span className="xs:hidden">USDT</span>
+            </button>
+          )}
 
-          {/* Add to MetaMask Button (Desktop) */}
+          {/* Add to MetaMask Button */}
           <button
             onClick={addUsdtToMetaMask}
             className="hidden sm:inline-block bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-2.5 py-1.5 rounded-xl text-xs border border-slate-200 transition-colors"
@@ -177,7 +151,7 @@ export default function WalletConnect() {
             ➕ Add to MetaMask
           </button>
 
-          {chainId !== BSC_TESTNET_CHAIN_ID && (
+          {chainId !== BSC_CHAIN_ID && (
             <button
               onClick={switchNetwork}
               className="bg-amber-500 hover:bg-amber-600 text-white font-bold px-2.5 py-1.5 rounded-xl text-[11px] sm:text-xs transition-colors"
@@ -189,31 +163,31 @@ export default function WalletConnect() {
       ) : (
         /* Case 3: REGISTERED & LOGGED IN */
         <div className="flex items-center gap-1.5 sm:gap-3">
-          {/* Faucet Button */}
-          <button
-            onClick={claimFaucetUsdt}
-            disabled={isClaimingFaucet}
-            className="hidden sm:flex bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold px-2.5 py-1.5 rounded-xl text-xs border border-emerald-200 transition-colors items-center gap-1"
-            title="Claim 1,000 Free Testnet USDT"
-          >
-            <span>🎁</span>
-            <span>{isClaimingFaucet ? 'Claiming...' : 'Get 1,000 USDT'}</span>
-          </button>
+          {/* Testnet Faucet Button */}
+          {isTestnet && (
+            <button
+              onClick={claimFaucetUsdt}
+              disabled={isClaimingFaucet}
+              className="hidden sm:flex bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold px-2.5 py-1.5 rounded-xl text-xs border border-emerald-200 transition-colors items-center gap-1"
+              title="Claim 1,000 Free Testnet USDT"
+            >
+              <span>🎁</span>
+              <span>{isClaimingFaucet ? 'Claiming...' : 'Get 1,000 USDT'}</span>
+            </button>
+          )}
 
           {/* Balance Badge */}
-          {chainId === BSC_TESTNET_CHAIN_ID && (
-            <div className="hidden md:flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 text-xs shadow-sm">
-              <span className="text-emerald-700 font-bold flex items-center gap-1.5">
-                <UsdtIcon className="w-4 h-4" />
-                ${usdtBalance} USDT
-              </span>
-              <span className="text-slate-300">|</span>
-              <span className="text-slate-700 font-mono font-bold flex items-center gap-1.5">
-                <BnbIcon className="w-4 h-4" />
-                {bnbBalance} BNB
-              </span>
-            </div>
-          )}
+          <div className="hidden md:flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 text-xs shadow-sm">
+            <span className="text-emerald-700 font-bold flex items-center gap-1.5">
+              <UsdtIcon className="w-4 h-4" />
+              ${usdtBalance} USDT
+            </span>
+            <span className="text-slate-300">|</span>
+            <span className="text-slate-700 font-mono font-bold flex items-center gap-1.5">
+              <BnbIcon className="w-4 h-4" />
+              {bnbBalance} BNB
+            </span>
+          </div>
 
           {/* Connected Wallet Badge */}
           <div className="flex items-center gap-1.5 bg-sky-50 px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl border border-sky-200 text-[11px] sm:text-xs font-mono font-bold text-sky-700">
@@ -237,3 +211,4 @@ export default function WalletConnect() {
     </>
   );
 }
+

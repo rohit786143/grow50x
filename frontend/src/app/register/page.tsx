@@ -3,7 +3,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { ethers } from 'ethers';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { CONTRACT_ADDRESSES, GROW50X_CORE_ABI, MOCK_USDT_ABI, isAdminWallet, getAdminIndex, ensureBscTestnetChain } from '../../config/contracts';
+import { CONTRACT_ADDRESSES, GROW50X_CORE_ABI, MOCK_USDT_ABI, isAdminWallet, getAdminIndex, ensureBscChain } from '../../config/contracts';
 import { useWeb3 } from '../../context/Web3Context';
 import { validatePlacementEligibility } from '../../utils/placementValidation';
 
@@ -20,7 +20,8 @@ function RegisterFormContent() {
   const searchParams = useSearchParams();
   const sponsorParam = searchParams?.get('sponsor') || searchParams?.get('ref') || searchParams?.get('sponsorId');
 
-  const { account, mainUserId, isRegistered, usdtBalance, refreshWeb3State } = useWeb3();
+  const { account, mainUserId, isRegistered, usdtBalance, chainId, refreshWeb3State } = useWeb3();
+  const isTestnet = chainId === 97;
   const [totalUserCount, setTotalUserCount] = useState<number>(0);
   const [mounted, setMounted] = useState<boolean>(false);
 
@@ -147,12 +148,12 @@ function RegisterFormContent() {
     setIsClaimingFaucet(true);
     setStatusMessage('Checking network and minting 1,000 Free Testnet USDT to your wallet...');
     try {
-      await ensureBscTestnetChain();
+      await ensureBscChain();
       const provider = new ethers.BrowserProvider((window as any).ethereum);
       const signer = await provider.getSigner();
       const usdtContract = new ethers.Contract(CONTRACT_ADDRESSES.USDT, MOCK_USDT_ABI, signer);
 
-      const tx = await usdtContract.faucet({ chainId: 97 });
+      const tx = await usdtContract.faucet();
       await tx.wait(1);
 
       setStatusMessage('🎉 Successfully claimed 1,000 USDT! Now approve USDT in Step 1 below.');
@@ -173,18 +174,18 @@ function RegisterFormContent() {
     setIsSubmitting(true);
     setStatusMessage('🔑 Step 1/2: Please click CONFIRM in your MetaMask popup to approve USDT...');
     try {
-      await ensureBscTestnetChain();
+      await ensureBscChain();
       const provider = new ethers.BrowserProvider((window as any).ethereum);
       const signer = await provider.getSigner();
       const usdtContract = new ethers.Contract(CONTRACT_ADDRESSES.USDT, MOCK_USDT_ABI, signer);
 
-      const approveTx = await usdtContract.approve(CONTRACT_ADDRESSES.GROW50X_CORE, ethers.MaxUint256, { chainId: 97 });
-      setStatusMessage('⏳ Confirming USDT Approval on BSC Testnet blockchain...');
+      const approveTx = await usdtContract.approve(CONTRACT_ADDRESSES.GROW50X_CORE, ethers.MaxUint256);
+      setStatusMessage('⏳ Confirming USDT Approval on BNB Smart Chain blockchain...');
       await approveTx.wait(1);
       
       await checkAllowanceOnChain();
       setStatusMessage('✓ USDT Approved successfully! Now click "Step 2/2: Register Main ID" below.');
-      alert('✓ USDT Approval Confirmed on BSC Testnet! Now click "Step 2/2: Register Main ID".');
+      alert('✓ USDT Approval Confirmed! Now click "Step 2/2: Register Main ID".');
     } catch (err: any) {
       console.error('Approval error:', err);
       const msg = err.reason || err.message || 'Approval failed';
@@ -209,10 +210,10 @@ function RegisterFormContent() {
     if (isSubmitting) return;
 
     setIsSubmitting(true);
-    setStatusMessage('Verifying USDT allowance on BSC Testnet...');
+    setStatusMessage('Verifying USDT allowance on BNB Smart Chain...');
 
     try {
-      await ensureBscTestnetChain();
+      await ensureBscChain();
       const provider = new ethers.BrowserProvider((window as any).ethereum);
       const signer = await provider.getSigner();
       const usdtContract = new ethers.Contract(CONTRACT_ADDRESSES.USDT, MOCK_USDT_ABI, signer);
@@ -300,14 +301,14 @@ function RegisterFormContent() {
         gasLimit = BigInt(450000);
       }
 
-      const regTx = await coreContract.registerMainUser(sponsorIdNum, placementIdNum, { gasLimit, chainId: 97 });
+      const regTx = await coreContract.registerMainUser(sponsorIdNum, placementIdNum, { gasLimit });
 
-      setStatusMessage('⏳ Finalizing Registration on BSC Testnet blockchain...');
+      setStatusMessage('⏳ Finalizing Registration on BNB Smart Chain blockchain...');
       console.log('Register TX:', regTx.hash);
       await regTx.wait(1);
 
       setStatusMessage('🎉 Registration Successful! Redirecting to Dashboard...');
-      alert(count === 0 ? '🎉 Congratulations! Registered as 1st Root User!' : '🎉 Registration Successful on BSC Testnet!');
+      alert(count === 0 ? '🎉 Congratulations! Registered as 1st Root User!' : '🎉 Registration Successful on BNB Smart Chain!');
 
       await refreshWeb3State();
       router.push('/dashboard');
@@ -408,15 +409,21 @@ function RegisterFormContent() {
               <p className="text-amber-800">
                 Your wallet currently has <strong>{usdtBalance} USDT</strong>. Registration requires <strong>100 USDT</strong>.
               </p>
-              <button
-                type="button"
-                onClick={handleClaimFaucet}
-                disabled={isClaimingFaucet}
-                className="w-full btn-primary-emerald py-3 rounded-xl font-bold text-xs shadow-md flex items-center justify-center gap-2"
-              >
-                <span>🎁</span>
-                {isClaimingFaucet ? 'Minting 1,000 USDT...' : 'Claim 1,000 Free Testnet USDT Now'}
-              </button>
+              {isTestnet ? (
+                <button
+                  type="button"
+                  onClick={handleClaimFaucet}
+                  disabled={isClaimingFaucet}
+                  className="w-full btn-primary-emerald py-3 rounded-xl font-bold text-xs shadow-md flex items-center justify-center gap-2"
+                >
+                  <span>🎁</span>
+                  {isClaimingFaucet ? 'Minting 1,000 USDT...' : 'Claim 1,000 Free Testnet USDT Now'}
+                </button>
+              ) : (
+                <p className="text-[11px] font-semibold text-slate-600">
+                  Please acquire BEP-20 USDT into your connected BNB Smart Chain wallet address to proceed with 100 USDT registration.
+                </p>
+              )}
             </div>
           )}
 
@@ -509,7 +516,7 @@ function RegisterFormContent() {
               </div>
               <div className="flex justify-between text-slate-600">
                 <span>Estimated Network Gas</span>
-                <span className="font-bold text-slate-900">~0.001 tBNB (~$0.01)</span>
+                <span className="font-bold text-slate-900">~0.0003 BNB (~$0.20)</span>
               </div>
             </div>
 

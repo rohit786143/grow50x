@@ -46,7 +46,7 @@ export async function validatePlacementEligibility(
     } else if (typeof window !== 'undefined' && (window as any).ethereum) {
       provider = new ethers.BrowserProvider((window as any).ethereum);
     } else {
-      provider = new ethers.JsonRpcProvider('https://data-seed-prebsc-1-s1.binance.org:8545');
+      provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_URL || 'https://bsc-dataseed.binance.org/');
     }
 
     const coreContract = new ethers.Contract(CONTRACT_ADDRESSES.GROW50X_CORE, GROW50X_CORE_ABI, provider);

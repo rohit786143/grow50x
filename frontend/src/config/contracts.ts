@@ -1,10 +1,11 @@
+export const BSC_CHAIN_ID = Number(process.env.NEXT_PUBLIC_CHAIN_ID) || 56;
 export const BSC_TESTNET_CHAIN_ID = 97;
+export const BSC_MAINNET_CHAIN_ID = 56;
 
 export const CONTRACT_ADDRESSES = {
-  USDT: process.env.NEXT_PUBLIC_USDT_ADDRESS || "0x417e7Fb37a3803AFfDC13D216b4597a215A89871",
-  GROW50X_CORE: process.env.NEXT_PUBLIC_CORE_ADDRESS || "0x0172c89956FD54f22a0803BdE249079B47c05b82",
+  USDT: process.env.NEXT_PUBLIC_USDT_ADDRESS || "0x55d398326f99059fF775485246999027B3197955",
+  GROW50X_CORE: process.env.NEXT_PUBLIC_CORE_ADDRESS || "0x3E6601C3b99783863Fcf57F883B08A17B7c140dF",
 };
-
 
 export const MOCK_USDT_ABI = [
   "function balanceOf(address account) external view returns (uint256)",
@@ -70,9 +71,9 @@ export const GROW50X_CORE_ABI = [
 ] as const;
 
 export const ADMIN_WALLETS = [
-  "0x7d27949028d8c8532728c69ff2153ee6bb3bf82e",
-  "0x7a3fc2c5610f0962dd5927a4f7397ae060b79d68",
-  "0x2b255ed42530cb531cbdab4c4df23eb408fb748b"
+  (process.env.NEXT_PUBLIC_ADMIN_WALLET_1 || "0xAF39c1D4759071FcB63a710A54cAEC87aB0EEe99").toLowerCase(),
+  (process.env.NEXT_PUBLIC_ADMIN_WALLET_2 || "0x173d429E5690dD6CD40d526Cb7D4138D3B930c61").toLowerCase(),
+  (process.env.NEXT_PUBLIC_ADMIN_WALLET_3 || "0x1c3Fe2bD2a2F0D2Ce35E45762B2Ae60A2c83D9c2").toLowerCase()
 ];
 
 export function getAdminIndex(address: string | null | undefined): number {
@@ -89,52 +90,75 @@ export function isAdminWallet(address: string | null | undefined): boolean {
 }
 
 export async function ensureBscTestnetChain(ethereumProvider?: any): Promise<boolean> {
+  return ensureBscChain(ethereumProvider);
+}
+
+export async function ensureBscChain(ethereumProvider?: any): Promise<boolean> {
   if (typeof window === 'undefined') return false;
   const ethereum = ethereumProvider || (window as any).trustwallet || (window as any).ethereum;
   if (!ethereum) return false;
 
-  const BSC_TESTNET_HEX_CHAIN_ID = '0x61'; // 97 in decimal
+  const targetChainId = Number(process.env.NEXT_PUBLIC_CHAIN_ID) || 56;
+  const isMainnet = targetChainId === 56;
+  const targetHexChainId = isMainnet ? '0x38' : '0x61';
 
-  // 1. Force network switch RPC to trigger Trust Wallet / MetaMask mobile native modal update to BSC Testnet (97)
   try {
     await ethereum.request({
       method: 'wallet_switchEthereumChain',
-      params: [{ chainId: BSC_TESTNET_HEX_CHAIN_ID }],
+      params: [{ chainId: targetHexChainId }],
     });
     return true;
   } catch (switchError: any) {
-    // 2. If chain not added (Error 4902 / custom wallet error), attempt adding network
     try {
-      await ethereum.request({
-        method: 'wallet_addEthereumChain',
-        params: [
-          {
-            chainId: BSC_TESTNET_HEX_CHAIN_ID,
-            chainName: 'BNB Smart Chain Testnet',
-            nativeCurrency: { name: 'tBNB', symbol: 'tBNB', decimals: 18 },
-            rpcUrls: [
-              'https://data-seed-prebsc-1-s1.binance.org:8545/',
-              'https://bsc-testnet.publicnode.com'
-            ],
-            blockExplorerUrls: ['https://testnet.bscscan.com/'],
-          },
-        ],
-      });
+      if (isMainnet) {
+        await ethereum.request({
+          method: 'wallet_addEthereumChain',
+          params: [
+            {
+              chainId: '0x38',
+              chainName: 'BNB Smart Chain Mainnet',
+              nativeCurrency: { name: 'BNB', symbol: 'BNB', decimals: 18 },
+              rpcUrls: [
+                process.env.NEXT_PUBLIC_RPC_URL || 'https://bsc-dataseed.binance.org/',
+                'https://bsc-dataseed1.binance.org/',
+                'https://bsc-mainnet.publicnode.com'
+              ],
+              blockExplorerUrls: ['https://bscscan.com/'],
+            },
+          ],
+        });
+      } else {
+        await ethereum.request({
+          method: 'wallet_addEthereumChain',
+          params: [
+            {
+              chainId: '0x61',
+              chainName: 'BNB Smart Chain Testnet',
+              nativeCurrency: { name: 'tBNB', symbol: 'tBNB', decimals: 18 },
+              rpcUrls: [
+                process.env.NEXT_PUBLIC_RPC_URL || 'https://bsc-testnet-rpc.publicnode.com',
+                'https://data-seed-prebsc-1-s1.binance.org:8545/'
+              ],
+              blockExplorerUrls: ['https://testnet.bscscan.com/'],
+            },
+          ],
+        });
+      }
       return true;
     } catch (addError) {
       console.warn('Network switch/add notice:', addError);
     }
   }
 
-  // 3. Fallback verification
   try {
     const { ethers } = await import('ethers');
     const provider = new ethers.BrowserProvider(ethereum);
     const network = await provider.getNetwork();
-    return Number(network.chainId) === BSC_TESTNET_CHAIN_ID;
+    return Number(network.chainId) === targetChainId;
   } catch (e) {
     return false;
   }
 }
+
 
 

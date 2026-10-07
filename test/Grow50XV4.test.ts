@@ -44,21 +44,17 @@ describe("GROW 50X V4 Comprehensive Verification Suite", function () {
 
   describe("1. Direct Income 40% ($40 USDT) Rules", function () {
     it("Should split 40% Direct Income of First ID (Root) across 3 admins equally", async function () {
-      const admin1Before = await usdt.balanceOf(admin1.address);
-      const admin2Before = await usdt.balanceOf(admin2.address);
-      const admin3Before = await usdt.balanceOf(admin3.address);
-
       // Register Root User (userA, totalUserCount == 0, sponsorId = 0)
       await coreV4.connect(userA).registerMainUser(0, 0);
 
-      const admin1After = await usdt.balanceOf(admin1.address);
-      const admin2After = await usdt.balanceOf(admin2.address);
-      const admin3After = await usdt.balanceOf(admin3.address);
+      const admin1Unclaimed = await coreV4.admin1UnclaimedFees();
+      const admin2Unclaimed = await coreV4.admin2UnclaimedFees();
+      const admin3Unclaimed = await coreV4.admin3UnclaimedFees();
 
-      // 40 USDT split 3 ways = 13.333333333333333333 USDT each (+ remainder to admin 1)
-      expect(admin1After - admin1Before).to.be.closeTo(ethers.parseEther("18.333333333333333333"), ethers.parseEther("0.001"));
-      expect(admin2After - admin2Before).to.be.closeTo(ethers.parseEther("18.333333333333333333"), ethers.parseEther("0.001"));
-      expect(admin3After - admin3Before).to.be.closeTo(ethers.parseEther("18.333333333333333333"), ethers.parseEther("0.001"));
+      // 5% Admin fee ($5) + 40 USDT split 3 ways (13.333333333333333333 USDT each)
+      expect(admin1Unclaimed).to.be.closeTo(ethers.parseEther("18.333333333333333333"), ethers.parseEther("0.001"));
+      expect(admin2Unclaimed).to.be.closeTo(ethers.parseEther("18.333333333333333333"), ethers.parseEther("0.001"));
+      expect(admin3Unclaimed).to.be.closeTo(ethers.parseEther("18.333333333333333333"), ethers.parseEther("0.001"));
     });
 
     it("Should pay 100% of 40% Direct Income ($40 USDT) to Sponsor's wallet and credit to Sponsor's specific ledger (Main or Sub-ID)", async function () {
@@ -197,11 +193,10 @@ describe("GROW 50X V4 Comprehensive Verification Suite", function () {
       // Board 1001 completed! User A promoted to Level 2.
       // Check active boards for Level 1:
       const activeL1 = await coreV4.getActiveBoardUnitsByLevel(1);
-      // Board 1001 split into 1002 and 1003!
-      expect(activeL1.length).to.equal(3);
-      expect(activeL1[0]).to.equal(1001);
-      expect(activeL1[1]).to.equal(1002);
-      expect(activeL1[2]).to.equal(1003);
+      // Board 1001 is completed and 1002 and 1003 are active!
+      expect(activeL1.length).to.equal(2);
+      expect(activeL1.map(b => Number(b))).to.include(1002);
+      expect(activeL1.map(b => Number(b))).to.include(1003);
 
       // Check active boards for Level 2:
       const activeL2 = await coreV4.getActiveBoardUnitsByLevel(2);

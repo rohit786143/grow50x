@@ -7,6 +7,9 @@ typechain-types/
 out/
 .env
 .env.local
+.env.production
+backend/.env.production
+frontend/.env.production
 coverage/
 coverage.json
 *.log

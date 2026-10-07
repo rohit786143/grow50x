@@ -27,10 +27,8 @@ For every valid 100 USDT deposit:
 - **Admin Wallet 1**: 5% ($5.00 USDT) $\rightarrow$ Pushed to Admin Wallet 1 address.
 - **Admin Wallet 2**: 5% ($5.00 USDT) $\rightarrow$ Pushed to Admin Wallet 2 address.
 - **Admin Wallet 3**: 5% ($5.00 USDT) $\rightarrow$ Pushed to Admin Wallet 3 address.
-- **Reserve Fund**: 15% ($15.00 USDT) $\rightarrow$ Accumulated into Protocol Reserve.
-  - Internal Accounting Sub-buckets:
-    - `reserveForBoardRewards`
-    - `reserveForLevelIncome`
+- **Reserve Fund**: 15% ($15.00 USDT) $\rightarrow$ Accumulated into Single Unified Protocol Reserve Fund (`protocolReserveBalance`).
+  - Distributes **both** Board Completion Rewards ($40, $80, $160, $320, $640 USDT) and 3-Level Sub-ID Income ($3, $2, $1 USDT).
 
 $$\sum \text{Allocations} = 40 + 30 + 5 + 5 + 5 + 15 = 100\text{ USDT}$$
 

@@ -7,8 +7,8 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 
-const RPC_URL = process.env.RPC_URL || "https://data-seed-prebsc-1-s1.binance.org:8545/";
-const CORE_CONTRACT_ADDRESS = process.env.CORE_CONTRACT_ADDRESS || "0x5cc5E4De40Cdc0E0ff8669B740d6Ef674b188A44";
+const RPC_URL = process.env.RPC_URL || "https://bsc-dataseed.binance.org/";
+const CORE_CONTRACT_ADDRESS = process.env.CORE_CONTRACT_ADDRESS || "0x0000000000000000000000000000000000000000";
 
 const POLLING_INTERVAL_MS = 15000; // 15 Seconds periodic fallback scan
 
@@ -115,7 +115,7 @@ app.get("/api/health", (req: Request, res: Response) => {
   res.json({
     status: "healthy",
     contract: CORE_CONTRACT_ADDRESS,
-    network: "BNB Smart Chain Testnet",
+    network: "BNB Smart Chain Mainnet",
     lastProcessedBlock: lastProcessedBlock.toString(),
     resilience: "Auto-reconnect & Polling active",
   });

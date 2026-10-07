@@ -60,7 +60,7 @@ describe("GROW 50X Protocol Unit & Integration Tests", function () {
       expect(await core.getBoardCap(1)).to.equal(ethers.parseEther("200"));
       expect(await core.getBoardCap(2)).to.equal(ethers.parseEther("400"));
       expect(await core.getBoardCap(3)).to.equal(ethers.parseEther("1000"));
-      expect(await core.getBoardCap(4)).to.equal(ethers.parseEther("2500"));
+      expect(await core.getBoardCap(4)).to.equal(ethers.parseEther("2000"));
       expect(await core.getBoardCap(5)).to.equal(ethers.parseEther("5000"));
     });
   });

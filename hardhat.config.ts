@@ -23,6 +23,13 @@ const config: HardhatUserConfig = {
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
       chainId: 97,
     },
+    bscMainnet: {
+      url: process.env.BSC_MAINNET_RPC || process.env.NEXT_PUBLIC_RPC_URL || "https://bsc-dataseed.binance.org/",
+      accounts: process.env.PRIVATE_KEY && process.env.PRIVATE_KEY !== "YOUR_DEPLOYER_PRIVATE_KEY_HERE"
+        ? [process.env.PRIVATE_KEY.startsWith("0x") ? process.env.PRIVATE_KEY : `0x${process.env.PRIVATE_KEY}`]
+        : [],
+      chainId: 56,
+    },
   },
   paths: {
     sources: "./contracts",
@@ -39,6 +46,14 @@ const config: HardhatUserConfig = {
         urls: {
           apiURL: "https://api-testnet.bscscan.com/api",
           browserURL: "https://testnet.bscscan.com",
+        },
+      },
+      {
+        network: "bscMainnet",
+        chainId: 56,
+        urls: {
+          apiURL: "https://api.bscscan.com/api",
+          browserURL: "https://bscscan.com",
         },
       },
     ],
