@@ -64,7 +64,7 @@ export default function WalletConnect() {
       const signer = await provider.getSigner();
       const usdtContract = new ethers.Contract(CONTRACT_ADDRESSES.USDT, MOCK_USDT_ABI, signer);
 
-      const tx = await usdtContract.faucet();
+      const tx = await usdtContract.faucet({ chainId: 97 });
       await tx.wait();
       alert('🎉 1,000 Mock USDT successfully minted to your wallet!');
 

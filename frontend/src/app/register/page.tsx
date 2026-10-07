@@ -152,7 +152,7 @@ function RegisterFormContent() {
       const signer = await provider.getSigner();
       const usdtContract = new ethers.Contract(CONTRACT_ADDRESSES.USDT, MOCK_USDT_ABI, signer);
 
-      const tx = await usdtContract.faucet();
+      const tx = await usdtContract.faucet({ chainId: 97 });
       await tx.wait(1);
 
       setStatusMessage('🎉 Successfully claimed 1,000 USDT! Now approve USDT in Step 1 below.');
@@ -178,7 +178,7 @@ function RegisterFormContent() {
       const signer = await provider.getSigner();
       const usdtContract = new ethers.Contract(CONTRACT_ADDRESSES.USDT, MOCK_USDT_ABI, signer);
 
-      const approveTx = await usdtContract.approve(CONTRACT_ADDRESSES.GROW50X_CORE, ethers.MaxUint256);
+      const approveTx = await usdtContract.approve(CONTRACT_ADDRESSES.GROW50X_CORE, ethers.MaxUint256, { chainId: 97 });
       setStatusMessage('⏳ Confirming USDT Approval on BSC Testnet blockchain...');
       await approveTx.wait(1);
       
@@ -300,7 +300,7 @@ function RegisterFormContent() {
         gasLimit = BigInt(450000);
       }
 
-      const regTx = await coreContract.registerMainUser(sponsorIdNum, placementIdNum, { gasLimit });
+      const regTx = await coreContract.registerMainUser(sponsorIdNum, placementIdNum, { gasLimit, chainId: 97 });
 
       setStatusMessage('⏳ Finalizing Registration on BSC Testnet blockchain...');
       console.log('Register TX:', regTx.hash);

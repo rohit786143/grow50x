@@ -134,7 +134,7 @@ export default function SubIdsPage() {
       const signer = await provider.getSigner();
       const usdtContract = new ethers.Contract(CONTRACT_ADDRESSES.USDT, MOCK_USDT_ABI, signer);
 
-      const tx = await usdtContract.faucet();
+      const tx = await usdtContract.faucet({ chainId: 97 });
       await tx.wait(1);
       setStatusMessage('🎉 1,000 Mock USDT claimed successfully!');
       alert('🎉 1,000 Mock USDT successfully added to your wallet!');
@@ -193,7 +193,7 @@ export default function SubIdsPage() {
       let allowance = await usdtContract.allowance(userAddr, CONTRACT_ADDRESSES.GROW50X_CORE);
       if (allowance < totalCostWei) {
         setStatusMessage('Approving USDT transfer (Step 1/2)...');
-        const approveTx = await usdtContract.approve(CONTRACT_ADDRESSES.GROW50X_CORE, ethers.MaxUint256);
+        const approveTx = await usdtContract.approve(CONTRACT_ADDRESSES.GROW50X_CORE, ethers.MaxUint256, { chainId: 97 });
         await approveTx.wait(1);
         allowance = await usdtContract.allowance(userAddr, CONTRACT_ADDRESSES.GROW50X_CORE);
         if (allowance < totalCostWei) {
@@ -217,7 +217,7 @@ export default function SubIdsPage() {
         gasLimit = BigInt(220000 + batchCount * 140000);
       }
 
-      const batchTx = await coreContract.createBatchSubIds(batchCount, { gasLimit });
+      const batchTx = await coreContract.createBatchSubIds(batchCount, { gasLimit, chainId: 97 });
       await batchTx.wait(1);
 
       setStatusMessage(`🎉 Successfully created ${batchCount} Sub-IDs!`);
@@ -292,7 +292,7 @@ export default function SubIdsPage() {
       let allowance = await usdtContract.allowance(userAddr, CONTRACT_ADDRESSES.GROW50X_CORE);
       if (allowance < entryFeeWei) {
         setStatusMessage('Approving 100 USDT transfer...');
-        const approveTx = await usdtContract.approve(CONTRACT_ADDRESSES.GROW50X_CORE, ethers.MaxUint256);
+        const approveTx = await usdtContract.approve(CONTRACT_ADDRESSES.GROW50X_CORE, ethers.MaxUint256, { chainId: 97 });
         await approveTx.wait(1);
         allowance = await usdtContract.allowance(userAddr, CONTRACT_ADDRESSES.GROW50X_CORE);
         if (allowance < entryFeeWei) {
@@ -378,7 +378,7 @@ export default function SubIdsPage() {
         gasLimit = BigInt(380000);
       }
 
-      const createTx = await coreContract.createSubId(manualSponsorId, pId, { gasLimit });
+      const createTx = await coreContract.createSubId(manualSponsorId, pId, { gasLimit, chainId: 97 });
       await createTx.wait(1);
 
       setStatusMessage('🎉 Sub-ID successfully registered!');
