@@ -6,12 +6,15 @@ import Link from 'next/link';
 import { ethers } from 'ethers';
 import { CONTRACT_ADDRESSES, MOCK_USDT_ABI, GROW50X_CORE_ABI, getAdminIndex } from '../../config/contracts';
 import { useWeb3 } from '../../context/Web3Context';
+import AdminGuard from '../../components/AdminGuard';
 
 
 export default function AdminAnalyticsPage() {
   return (
     <Suspense fallback={<div className="p-8 text-center text-xs text-slate-400 font-bold">Loading Admin Telemetry...</div>}>
-      <AdminAnalyticsContent />
+      <AdminGuard>
+        <AdminAnalyticsContent />
+      </AdminGuard>
     </Suspense>
   );
 }
