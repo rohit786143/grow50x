@@ -170,7 +170,7 @@ export default function AdminGuard({ children }: AdminGuardProps) {
 
   // Render Light Glassmorphism Login Gate Screen (Step 1 or Step 2)
   return (
-    <div className="min-h-[80vh] flex items-center justify-center p-4 sm:p-6 bg-slate-50 relative overflow-hidden">
+    <div className="flex items-start justify-center pt-2 sm:pt-4 pb-8 p-4 bg-slate-50 relative overflow-hidden">
       {/* Background Soft Color Glow Blobs matching website */}
       <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-emerald-400/15 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-10 right-10 w-[350px] h-[350px] bg-sky-400/15 rounded-full blur-3xl pointer-events-none" />
@@ -344,20 +344,6 @@ export default function AdminGuard({ children }: AdminGuardProps) {
             </div>
           </div>
         )}
-
-        {/* Authorized Wallets Footer */}
-        <div className="mt-6 pt-4 border-t border-slate-100 text-center bg-slate-50/60 p-3 rounded-2xl border border-slate-200/60">
-          <p className="text-[11px] font-bold text-slate-500">
-            Authorized Protocol Admin Wallets:
-          </p>
-          <div className="mt-1 font-mono text-[10px] text-slate-600 space-y-0.5">
-            {ADMIN_WALLETS.map((w, i) => (
-              <div key={w} className="opacity-90">
-                Admin #{i + 1}: {w.substring(0, 6)}...{w.substring(w.length - 4)}
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
 
       <WalletModal
