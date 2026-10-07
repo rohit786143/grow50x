@@ -133,9 +133,9 @@ export default function AdminGuard({ children }: AdminGuardProps) {
 
   if (checkingAuth) {
     return (
-      <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-6">
-        <div className="flex items-center gap-3 text-amber-400 font-bold text-sm">
-          <span className="w-4 h-4 rounded-full border-2 border-amber-400 border-t-transparent animate-spin" />
+      <div className="min-h-[80vh] bg-slate-50 flex items-center justify-center p-6">
+        <div className="flex items-center gap-3 text-emerald-700 font-bold text-sm bg-white p-4 rounded-2xl border border-slate-200 shadow-md">
+          <span className="w-5 h-5 rounded-full border-2 border-emerald-600 border-t-transparent animate-spin" />
           Checking Admin Access Permissions...
         </div>
       </div>
@@ -147,18 +147,18 @@ export default function AdminGuard({ children }: AdminGuardProps) {
     const adminIdx = getAdminIndex(account);
     return (
       <div>
-        {/* Top Admin Security Banner */}
-        <div className="bg-slate-900 border-b border-amber-500/20 px-4 py-2.5 flex flex-wrap items-center justify-between text-xs font-mono text-slate-300 gap-2">
+        {/* Top Admin Security Status Banner */}
+        <div className="bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 text-slate-950 font-bold px-4 py-2 flex flex-wrap items-center justify-between text-xs shadow-md gap-2">
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-amber-400 font-extrabold">👑 ADMIN CONSOLE AUTHORIZED</span>
-            <span className="text-slate-500">|</span>
-            <span>Admin #{adminIdx} ({account.substring(0, 6)}...{account.substring(account.length - 4)})</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-slate-950 animate-pulse" />
+            <span className="font-extrabold uppercase tracking-wider">👑 ADMIN CONSOLE AUTHORIZED</span>
+            <span className="opacity-40">|</span>
+            <span className="font-mono text-xs">Admin #{adminIdx} ({account.substring(0, 6)}...{account.substring(account.length - 4)})</span>
           </div>
 
           <button
             onClick={handleLogout}
-            className="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 px-3 py-1 rounded-lg text-xs font-sans font-bold transition-all flex items-center gap-1.5"
+            className="bg-slate-950 hover:bg-slate-900 text-amber-400 font-extrabold px-3 py-1 rounded-lg text-xs transition-all flex items-center gap-1.5 shadow-sm"
           >
             <span>🔒</span> Logout Admin
           </button>
@@ -168,51 +168,51 @@ export default function AdminGuard({ children }: AdminGuardProps) {
     );
   }
 
-  // Render Login Gate Screen (Step 1 or Step 2)
+  // Render Light Glassmorphism Login Gate Screen (Step 1 or Step 2)
   return (
-    <div className="min-h-[85vh] flex items-center justify-center p-4 sm:p-6 bg-slate-950 relative overflow-hidden">
-      {/* Background Glows */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[480px] h-[480px] bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-10 right-10 w-[320px] h-[320px] bg-sky-500/10 rounded-full blur-3xl pointer-events-none" />
+    <div className="min-h-[80vh] flex items-center justify-center p-4 sm:p-6 bg-slate-50 relative overflow-hidden">
+      {/* Background Soft Color Glow Blobs matching website */}
+      <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-emerald-400/15 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-10 right-10 w-[350px] h-[350px] bg-sky-400/15 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="w-full max-w-md bg-slate-900/95 backdrop-blur-xl border border-amber-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-amber-950/50 relative z-10">
+      <div className="w-full max-w-md bg-white/95 backdrop-blur-xl border border-slate-200/90 rounded-3xl p-6 sm:p-8 shadow-xl shadow-slate-200/60 relative z-10">
         
-        {/* Header Badge & Title */}
+        {/* Header Logo Badge & Title */}
         <div className="text-center mb-6">
-          <div className="w-16 h-16 mx-auto mb-3 bg-gradient-to-br from-amber-400 to-amber-600 rounded-2xl p-0.5 shadow-lg shadow-amber-500/20 flex items-center justify-center">
-            <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center text-3xl">
+          <div className="w-16 h-16 mx-auto mb-3 bg-gradient-to-br from-emerald-500 via-teal-500 to-sky-600 rounded-2xl p-0.5 shadow-lg shadow-emerald-500/25 flex items-center justify-center">
+            <div className="w-full h-full bg-white rounded-[14px] flex items-center justify-center text-3xl">
               🛡️
             </div>
           </div>
-          <h1 className="text-2xl font-extrabold text-white tracking-tight">GROW 50X ADMIN LOGIN</h1>
-          <p className="text-xs text-amber-400/80 font-semibold mt-1">
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight">GROW 50X ADMIN LOGIN</h1>
+          <p className="text-xs text-emerald-700 font-bold mt-1">
             Restricted System Protocol Console • 2-Step Authentication
           </p>
 
-          {/* Stepper Indicator */}
+          {/* Stepper Indicator Badge */}
           <div className="flex items-center justify-center gap-2 mt-4">
             <div className={`px-3 py-1 rounded-full text-[11px] font-extrabold flex items-center gap-1 transition-all ${
               currentStep === 1
-                ? 'bg-amber-400 text-slate-950 shadow-md shadow-amber-400/20'
-                : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-500/20'
+                : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
             }`}>
               <span>1</span> Login ID & Password {credentialsPassed && '✓'}
             </div>
-            <span className="text-slate-600 text-xs">→</span>
+            <span className="text-slate-400 text-xs font-bold">→</span>
             <div className={`px-3 py-1 rounded-full text-[11px] font-extrabold flex items-center gap-1 transition-all ${
               currentStep === 2
-                ? 'bg-amber-400 text-slate-950 shadow-md shadow-amber-400/20'
-                : 'bg-slate-800 text-slate-500'
+                ? 'bg-gradient-to-r from-sky-600 to-blue-600 text-white shadow-md shadow-sky-500/20'
+                : 'bg-slate-100 text-slate-500 border border-slate-200'
             }`}>
               <span>2</span> Connect Admin Wallet
             </div>
           </div>
         </div>
 
-        {/* Error Notification */}
+        {/* Error Alert Box */}
         {errorMsg && (
-          <div className="mb-5 p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-semibold flex items-center gap-2 animate-shake">
-            <span>🚨</span>
+          <div className="mb-5 p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2 animate-shake shadow-sm">
+            <span className="text-base">🚨</span>
             <span>{errorMsg}</span>
           </div>
         )}
@@ -221,7 +221,7 @@ export default function AdminGuard({ children }: AdminGuardProps) {
         {currentStep === 1 && (
           <form onSubmit={handleVerifyCredentials} className="space-y-4">
             <div>
-              <label className="block text-xs font-bold text-slate-300 mb-1.5 uppercase tracking-wider">
+              <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
                 Admin Login ID
               </label>
               <div className="relative">
@@ -231,14 +231,14 @@ export default function AdminGuard({ children }: AdminGuardProps) {
                   value={loginId}
                   onChange={(e) => setLoginId(e.target.value)}
                   placeholder="Enter Admin Login ID"
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-amber-500/60 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-500/20 font-medium transition-all"
+                  className="w-full bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:bg-white rounded-xl px-4 py-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 font-medium transition-all shadow-sm"
                 />
-                <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-sm">👤</span>
+                <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm">👤</span>
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-300 mb-1.5 uppercase tracking-wider">
+              <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
                 Admin Password
               </label>
               <div className="relative">
@@ -248,12 +248,12 @@ export default function AdminGuard({ children }: AdminGuardProps) {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter Admin Password"
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-amber-500/60 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-500/20 font-medium transition-all pr-12"
+                  className="w-full bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:bg-white rounded-xl px-4 py-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 font-medium transition-all shadow-sm pr-12"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 text-xs font-bold px-1 py-0.5"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-800 text-xs font-bold px-1.5 py-0.5 rounded bg-slate-200/60 hover:bg-slate-200"
                 >
                   {showPassword ? 'Hide' : 'Show'}
                 </button>
@@ -262,7 +262,7 @@ export default function AdminGuard({ children }: AdminGuardProps) {
 
             <button
               type="submit"
-              className="w-full mt-2 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-extrabold text-sm py-3.5 rounded-xl shadow-lg shadow-amber-500/20 hover:shadow-amber-500/30 transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2"
+              className="w-full mt-2 bg-gradient-to-r from-emerald-600 via-teal-600 to-sky-600 hover:from-emerald-500 hover:to-sky-500 text-white font-black text-sm py-3.5 rounded-xl shadow-lg shadow-emerald-600/20 hover:shadow-emerald-600/30 transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2"
             >
               <span>🔑</span> Next: Verify Credentials
             </button>
@@ -272,41 +272,41 @@ export default function AdminGuard({ children }: AdminGuardProps) {
         {/* STEP 2: Connect Authorized Admin Wallet */}
         {currentStep === 2 && (
           <div className="space-y-5">
-            <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-semibold flex items-center gap-2">
-              <span>✓</span>
+            <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2 shadow-sm">
+              <span className="text-base">✓</span>
               <span>Step 1 Complete: Login ID & Password Verified!</span>
             </div>
 
-            <div className="p-4 rounded-2xl bg-slate-950/90 border border-slate-800 space-y-3">
-              <div className="text-xs font-bold text-slate-300 uppercase tracking-wider">
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+              <div className="text-xs font-bold text-slate-700 uppercase tracking-wider">
                 Step 2: Connect Admin Wallet
               </div>
 
               {account ? (
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-900 border border-slate-800">
-                    <span className="text-xs font-mono text-slate-300">
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-white border border-slate-200 shadow-sm">
+                    <span className="text-xs font-mono font-bold text-slate-800">
                       {account.substring(0, 8)}...{account.substring(account.length - 6)}
                     </span>
                     {isAdminWallet(account) ? (
-                      <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded text-[11px] font-bold">
+                      <span className="bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5 rounded-full text-[11px] font-bold">
                         Admin Authorized
                       </span>
                     ) : (
-                      <span className="bg-rose-500/20 text-rose-400 border border-rose-500/30 px-2 py-0.5 rounded text-[11px] font-bold">
+                      <span className="bg-rose-100 text-rose-700 border border-rose-300 px-2 py-0.5 rounded-full text-[11px] font-bold">
                         Unauthorized
                       </span>
                     )}
                   </div>
 
                   {!isAdminWallet(account) && (
-                    <p className="text-xs text-rose-400 font-medium leading-relaxed">
-                      ⚠️ Connected wallet is not listed in the protocol Admin Registry. Please switch to Admin Wallet #1, #2, or #3 in your Web3 Wallet.
+                    <p className="text-xs text-rose-600 font-semibold leading-relaxed">
+                      ⚠️ Connected wallet is not listed in the protocol Admin Registry. Please switch to Admin Wallet #1, #2, or #3 in MetaMask.
                     </p>
                   )}
                 </div>
               ) : (
-                <div className="text-xs text-slate-400">
+                <div className="text-xs text-slate-600 font-medium">
                   Please connect an authorized Admin Wallet to unlock access to the Admin Telemetry Console.
                 </div>
               )}
@@ -314,7 +314,7 @@ export default function AdminGuard({ children }: AdminGuardProps) {
               <button
                 type="button"
                 onClick={() => setIsWalletModalOpen(true)}
-                className="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2"
+                className="w-full bg-slate-200 hover:bg-slate-300 text-slate-800 border border-slate-300 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-sm"
               >
                 <span>👛</span> {account ? 'Switch Wallet' : 'Connect Web3 Wallet'}
               </button>
@@ -324,7 +324,7 @@ export default function AdminGuard({ children }: AdminGuardProps) {
               <button
                 type="button"
                 onClick={() => setCurrentStep(1)}
-                className="w-1/3 bg-slate-800 hover:bg-slate-700 text-slate-300 py-3 rounded-xl text-xs font-bold transition-all text-center"
+                className="w-1/3 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 py-3 rounded-xl text-xs font-bold transition-all text-center"
               >
                 ← Back
               </button>
@@ -335,8 +335,8 @@ export default function AdminGuard({ children }: AdminGuardProps) {
                 disabled={!account || !isAdminWallet(account)}
                 className={`w-2/3 py-3 rounded-xl text-xs font-extrabold shadow-lg transition-all flex items-center justify-center gap-2 ${
                   account && isAdminWallet(account)
-                    ? 'bg-gradient-to-r from-amber-500 to-amber-400 text-slate-950 shadow-amber-500/20 hover:scale-[1.02]'
-                    : 'bg-slate-800 text-slate-600 border border-slate-700 cursor-not-allowed'
+                    ? 'bg-gradient-to-r from-emerald-600 via-teal-600 to-sky-600 text-white shadow-emerald-600/20 hover:scale-[1.02]'
+                    : 'bg-slate-200 text-slate-400 border border-slate-300 cursor-not-allowed'
                 }`}
               >
                 <span>🔓</span> Unlock Admin Console
@@ -346,13 +346,13 @@ export default function AdminGuard({ children }: AdminGuardProps) {
         )}
 
         {/* Authorized Wallets Footer */}
-        <div className="mt-6 pt-4 border-t border-slate-800/80 text-center">
-          <p className="text-[11px] text-slate-500">
+        <div className="mt-6 pt-4 border-t border-slate-100 text-center bg-slate-50/60 p-3 rounded-2xl border border-slate-200/60">
+          <p className="text-[11px] font-bold text-slate-500">
             Authorized Protocol Admin Wallets:
           </p>
-          <div className="mt-1 font-mono text-[10px] text-slate-400 space-y-0.5">
+          <div className="mt-1 font-mono text-[10px] text-slate-600 space-y-0.5">
             {ADMIN_WALLETS.map((w, i) => (
-              <div key={w} className="opacity-80">
+              <div key={w} className="opacity-90">
                 Admin #{i + 1}: {w.substring(0, 6)}...{w.substring(w.length - 4)}
               </div>
             ))}
