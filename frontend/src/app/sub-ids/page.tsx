@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ethers } from 'ethers';
 import { CONTRACT_ADDRESSES, GROW50X_CORE_ABI, MOCK_USDT_ABI } from '../../config/contracts';
+import { validatePlacementEligibility } from '../../utils/placementValidation';
 
 export default function SubIdsPage() {
   const [account, setAccount] = useState<string | null>(null);
@@ -19,9 +20,35 @@ export default function SubIdsPage() {
   // Manual State
   const [manualSponsorId, setManualSponsorId] = useState<number>(0);
   const [manualPlacementId, setManualPlacementId] = useState<string>('');
+  const [placementStatus, setPlacementStatus] = useState<{ isChecking: boolean; isEligible: boolean; message: string }>({
+    isChecking: false,
+    isEligible: false,
+    message: '',
+  });
 
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [statusMessage, setStatusMessage] = useState<string>('');
+
+  // Real-time Placement ID Eligibility Check
+  useEffect(() => {
+    const clean = manualPlacementId.replace(/^GR/i, '').trim();
+    if (!clean || clean === '0') {
+      setPlacementStatus({ isChecking: false, isEligible: false, message: '' });
+      return;
+    }
+
+    setPlacementStatus({ isChecking: true, isEligible: false, message: 'Checking placement eligibility...' });
+    const timer = setTimeout(async () => {
+      const res = await validatePlacementEligibility(clean);
+      setPlacementStatus({
+        isChecking: false,
+        isEligible: res.isEligible,
+        message: res.message,
+      });
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [manualPlacementId]);
 
   useEffect(() => {
     loadOwnedIds();
@@ -228,6 +255,11 @@ export default function SubIdsPage() {
     // Compulsory Placement ID Validation
     if (!manualPlacementId || manualPlacementId.trim() === '' || Number(manualPlacementId) <= 0) {
       alert('Placement Parent ID is COMPULSORY! Please specify a valid Placement ID.');
+      return;
+    }
+
+    if (!placementStatus.isEligible) {
+      alert(`❌ Not Eligible for placement Id! ${placementStatus.message}`);
       return;
     }
 
@@ -491,9 +523,23 @@ export default function SubIdsPage() {
                 <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider">
                   2. Placement Parent ID <span className="text-rose-500 font-bold">* COMPULSORY</span>
                 </label>
-                <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
-                  Required
-                </span>
+                {placementStatus.isChecking ? (
+                  <span className="text-[10px] font-bold text-sky-600 bg-sky-50 px-2 py-0.5 rounded-full animate-pulse border border-sky-200">
+                    ⏳ Checking Eligibility...
+                  </span>
+                ) : manualPlacementId.trim() ? (
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                    placementStatus.isEligible 
+                      ? 'text-emerald-700 bg-emerald-50 border-emerald-300' 
+                      : 'text-rose-700 bg-rose-50 border-rose-300'
+                  }`}>
+                    {placementStatus.isEligible ? '✓ Eligible' : '❌ Not Eligible for placement Id'}
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
+                    Required
+                  </span>
+                )}
               </div>
               <input
                 type="number"
@@ -502,11 +548,28 @@ export default function SubIdsPage() {
                 value={manualPlacementId}
                 onChange={(e) => setManualPlacementId(e.target.value)}
                 placeholder="Enter target Placement Parent ID (e.g. 1)..."
-                className="w-full bg-slate-50 border border-slate-300 rounded-2xl px-4 py-3 text-sm font-mono font-bold text-slate-900 focus:outline-none focus:border-sky-500 shadow-sm"
+                className={`w-full bg-slate-50 border rounded-2xl px-4 py-3 text-sm font-mono font-bold text-slate-900 focus:outline-none transition-all shadow-sm ${
+                  manualPlacementId.trim()
+                    ? placementStatus.isEligible
+                      ? 'border-emerald-400 focus:border-emerald-500 bg-emerald-50/20'
+                      : 'border-rose-400 focus:border-rose-500 bg-rose-50/20'
+                    : 'border-slate-300 focus:border-sky-500'
+                }`}
               />
-              <p className="text-[11px] text-slate-400 mt-1">
-                Enter the numeric Placement ID where this Sub-ID will be placed in the 7-position board tree.
-              </p>
+              {placementStatus.message ? (
+                <div className={`mt-2 p-3 rounded-2xl border text-xs font-bold flex items-center gap-2 ${
+                  placementStatus.isEligible
+                    ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                    : 'bg-rose-50 border-rose-300 text-rose-800'
+                }`}>
+                  <span>{placementStatus.isEligible ? '✅' : '🚨'}</span>
+                  <span>{placementStatus.message}</span>
+                </div>
+              ) : (
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Enter the numeric Placement ID where this Sub-ID will be placed in the 7-position board tree.
+                </p>
+              )}
             </div>
 
             {/* Cost Summary */}

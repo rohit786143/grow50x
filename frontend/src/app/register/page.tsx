@@ -5,6 +5,7 @@ import { ethers } from 'ethers';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { CONTRACT_ADDRESSES, GROW50X_CORE_ABI, MOCK_USDT_ABI, isAdminWallet, getAdminIndex } from '../../config/contracts';
 import { useWeb3 } from '../../context/Web3Context';
+import { validatePlacementEligibility } from '../../utils/placementValidation';
 
 export default function RegisterPage() {
   return (
@@ -26,6 +27,11 @@ function RegisterFormContent() {
   // Form inputs
   const [sponsorInput, setSponsorInput] = useState<string>('363306');
   const [placementInput, setPlacementInput] = useState<string>('');
+  const [placementStatus, setPlacementStatus] = useState<{ isChecking: boolean; isEligible: boolean; message: string }>({
+    isChecking: false,
+    isEligible: true,
+    message: '',
+  });
 
   // Transaction state
   const [isApproved, setIsApproved] = useState<boolean>(false);
@@ -43,6 +49,27 @@ function RegisterFormContent() {
       setSponsorInput(sponsorParam.trim());
     }
   }, [sponsorParam]);
+
+  // Real-time Placement ID Eligibility Check
+  useEffect(() => {
+    const clean = placementInput.replace(/^GR/i, '').trim();
+    if (!clean || clean === '0') {
+      setPlacementStatus({ isChecking: false, isEligible: true, message: '' });
+      return;
+    }
+
+    setPlacementStatus({ isChecking: true, isEligible: false, message: 'Checking placement eligibility...' });
+    const timer = setTimeout(async () => {
+      const res = await validatePlacementEligibility(clean);
+      setPlacementStatus({
+        isChecking: false,
+        isEligible: res.isEligible,
+        message: res.message,
+      });
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [placementInput]);
 
   useEffect(() => {
     fetchTotalUserCount();
@@ -242,6 +269,17 @@ function RegisterFormContent() {
           setStatusMessage(`❌ Sponsor ID GR${sponsorIdNum} not found.`);
           return;
         }
+
+        // Validate Placement ID eligibility if specified
+        if (placementIdNum > 0) {
+          const valRes = await validatePlacementEligibility(placementIdNum);
+          if (!valRes.isEligible) {
+            alert(`❌ Not Eligible for placement Id! ${valRes.message}`);
+            setIsSubmitting(false);
+            setStatusMessage(`❌ Not Eligible for placement Id.`);
+            return;
+          }
+        }
       }
 
       // 4. Estimate gas & Execute Registration cleanly
@@ -404,17 +442,49 @@ function RegisterFormContent() {
             )}
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">
-                Placement ID <span className="text-slate-400">(Optional)</span>
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide">
+                  Placement ID <span className="text-slate-400 font-normal">(Optional)</span>
+                </label>
+                {placementStatus.isChecking ? (
+                  <span className="text-[10px] font-bold text-sky-600 bg-sky-50 px-2 py-0.5 rounded-full animate-pulse border border-sky-200">
+                    ⏳ Checking Eligibility...
+                  </span>
+                ) : placementInput.trim() && placementInput.trim() !== '0' ? (
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                    placementStatus.isEligible 
+                      ? 'text-emerald-700 bg-emerald-50 border-emerald-300' 
+                      : 'text-rose-700 bg-rose-50 border-rose-300'
+                  }`}>
+                    {placementStatus.isEligible ? '✓ Eligible' : '❌ Not Eligible for placement Id'}
+                  </span>
+                ) : null}
+              </div>
               <input
                 type="text"
                 value={placementInput}
                 onChange={(e) => setPlacementInput(e.target.value.toUpperCase())}
                 placeholder="0 (Auto Placement)"
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 font-mono focus:outline-none focus:border-sky-500"
+                className={`w-full bg-slate-50 border rounded-xl px-4 py-3 text-sm text-slate-900 font-mono focus:outline-none transition-all ${
+                  placementInput.trim() && placementInput.trim() !== '0'
+                    ? placementStatus.isEligible
+                      ? 'border-emerald-400 focus:border-emerald-500 bg-emerald-50/20'
+                      : 'border-rose-400 focus:border-rose-500 bg-rose-50/20'
+                    : 'border-slate-200 focus:border-sky-500'
+                }`}
               />
-              <p className="text-[11px] text-slate-500 mt-1">Leave blank or 0 for protocol automatic TOP → BOTTOM, LEFT → RIGHT placement.</p>
+              {placementStatus.message ? (
+                <div className={`mt-2 p-2.5 rounded-xl border text-xs font-bold flex items-center gap-2 ${
+                  placementStatus.isEligible
+                    ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                    : 'bg-rose-50 border-rose-300 text-rose-800 animate-shake'
+                }`}>
+                  <span>{placementStatus.isEligible ? '✅' : '🚨'}</span>
+                  <span>{placementStatus.message}</span>
+                </div>
+              ) : (
+                <p className="text-[11px] text-slate-500 mt-1">Leave blank or 0 for protocol automatic TOP → BOTTOM, LEFT → RIGHT placement.</p>
+              )}
             </div>
 
             <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2 text-xs">
