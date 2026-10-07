@@ -521,15 +521,26 @@ function RegisterFormContent() {
             </div>
 
             {hasInsufficientUsdt ? (
-              <button
-                type="button"
-                onClick={handleClaimFaucet}
-                disabled={isClaimingFaucet}
-                className="w-full btn-primary-emerald py-4 rounded-xl font-bold text-base shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
-              >
-                <span>🎁</span>
-                {isClaimingFaucet ? 'Minting 1,000 USDT...' : 'Claim 1,000 USDT Test Tokens First'}
-              </button>
+              isTestnet ? (
+                <button
+                  type="button"
+                  onClick={handleClaimFaucet}
+                  disabled={isClaimingFaucet}
+                  className="w-full btn-primary-emerald py-4 rounded-xl font-bold text-base shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
+                >
+                  <span>🎁</span>
+                  {isClaimingFaucet ? 'Minting 1,000 USDT...' : 'Claim 1,000 USDT Test Tokens First'}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  disabled
+                  className="w-full bg-slate-200 text-slate-500 py-4 rounded-xl font-bold text-base cursor-not-allowed flex items-center justify-center gap-2 border border-slate-300"
+                >
+                  <span>⚠️</span>
+                  <span>Insufficient USDT Balance (100 USDT Required)</span>
+                </button>
+              )
             ) : !isApproved ? (
               <button
                 type="button"
