@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { ethers } from 'ethers';
-import { CONTRACT_ADDRESSES, MOCK_USDT_ABI, GROW50X_CORE_ABI, isAdminWallet } from '../config/contracts';
+import { CONTRACT_ADDRESSES, MOCK_USDT_ABI, GROW50X_CORE_ABI, isAdminWallet, ensureBscTestnetChain } from '../config/contracts';
 import WalletModal from '../components/WalletModal';
 
 export interface OwnedIdItem {
@@ -201,6 +201,9 @@ export function Web3Provider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     try {
       const accounts = await providerToUse.request({ method: 'eth_requestAccounts' });
+
+      // Automatically trigger network switch prompt to BSC Testnet (tBNB) in Trust Wallet / MetaMask
+      await ensureBscTestnetChain(providerToUse);
 
       if (accounts && accounts.length > 0) {
         const details = await loadWeb3Details(accounts[0]);

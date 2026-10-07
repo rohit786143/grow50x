@@ -88,10 +88,6 @@ export function isAdminWallet(address: string | null | undefined): boolean {
   return getAdminIndex(address) > 0;
 }
 
-/**
- * Automatically checks and switches wallet network to BSC Testnet (Chain ID 97 / 0x61).
- * Essential for Mobile DApp Browsers (MetaMask Mobile, Trust, Bitget) to avoid fallback to Ethereum Mainnet (0 ETH).
- */
 export async function ensureBscTestnetChain(ethereumProvider?: any): Promise<boolean> {
   if (typeof window === 'undefined') return false;
   const ethereum = ethereumProvider || (window as any).ethereum;
@@ -99,6 +95,7 @@ export async function ensureBscTestnetChain(ethereumProvider?: any): Promise<boo
 
   const BSC_TESTNET_HEX_CHAIN_ID = '0x61'; // 97 in decimal
 
+  // 1. Check current network chain ID
   try {
     const { ethers } = await import('ethers');
     const provider = new ethers.BrowserProvider(ethereum);
@@ -110,6 +107,7 @@ export async function ensureBscTestnetChain(ethereumProvider?: any): Promise<boo
     console.warn('Network check warning:', e);
   }
 
+  // 2. Request network switch to BSC Testnet (Prompt popup in Trust Wallet / MetaMask)
   try {
     await ethereum.request({
       method: 'wallet_switchEthereumChain',
@@ -117,28 +115,25 @@ export async function ensureBscTestnetChain(ethereumProvider?: any): Promise<boo
     });
     return true;
   } catch (switchError: any) {
-    if (switchError.code === 4902 || switchError.code === -32603 || switchError.message?.includes('Unrecognized chain')) {
-      try {
-        await ethereum.request({
-          method: 'wallet_addEthereumChain',
-          params: [
-            {
-              chainId: BSC_TESTNET_HEX_CHAIN_ID,
-              chainName: 'BNB Smart Chain Testnet',
-              nativeCurrency: { name: 'tBNB', symbol: 'tBNB', decimals: 18 },
-              rpcUrls: ['https://data-seed-prebsc-1-s1.binance.org:8545/'],
-              blockExplorerUrls: ['https://testnet.bscscan.com/'],
-            },
-          ],
-        });
-        return true;
-      } catch (addError) {
-        console.error('Failed to add BSC Testnet chain:', addError);
-        return false;
-      }
+    // If switch fails (chain not added or custom wallet error in Trust Wallet), attempt adding network
+    try {
+      await ethereum.request({
+        method: 'wallet_addEthereumChain',
+        params: [
+          {
+            chainId: BSC_TESTNET_HEX_CHAIN_ID,
+            chainName: 'BNB Smart Chain Testnet',
+            nativeCurrency: { name: 'tBNB', symbol: 'tBNB', decimals: 18 },
+            rpcUrls: ['https://data-seed-prebsc-1-s1.binance.org:8545/'],
+            blockExplorerUrls: ['https://testnet.bscscan.com/'],
+          },
+        ],
+      });
+      return true;
+    } catch (addError) {
+      console.error('Failed to add BSC Testnet chain to wallet:', addError);
+      return false;
     }
-    console.error('Failed to switch to BSC Testnet chain:', switchError);
-    return false;
   }
 }
 
