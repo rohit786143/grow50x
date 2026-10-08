@@ -57,7 +57,7 @@ export default function PlanPresentation({ onConnectWallet, title, subtitle }: P
             {title || 'BNB Smart Chain (BEP-20 USDT) Protocol'}
           </div>
 
-          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-tight">
+          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-tight" style={{ fontFamily: 'Georgia, serif' }}>
             GROW{' '}
             <span className="relative inline-block px-1.5">
               <span className="gold-50x-shimmer font-black">50X</span>

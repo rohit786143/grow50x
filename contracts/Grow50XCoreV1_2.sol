@@ -31,10 +31,10 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
 
     IERC20 public immutable usdtToken;
 
-    // Official Admin Wallets
-    address public adminWallet1;
-    address public adminWallet2;
-    address public adminWallet3;
+    // Official Protocol Admin & Vault Wallets
+    address public mainAdminWallet;         // Main Admin Wallet (9c2)
+    address public rewardVaultWallet;       // Protocol Reward Fund Vault (e99)
+    address public serverMaintenanceWallet; // Server & Maintenance Vault (c61)
 
     // Protocol Counters & Share Tracker
     uint256 public totalUserCount;
@@ -43,18 +43,18 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
     mapping(uint8 => uint256) public boardLevelCounter;                 // boardLevel (1..5) => level-specific unit count
     uint256 public totalActiveProtocolShares;
 
-    // 3 Admin 5% Individual Telemetry & Ledger
-    uint256 public admin1UnclaimedFees;
-    uint256 public admin1TotalEarned;
-    uint256 public admin1TotalWithdrawn;
+    // 5% Protocol Fee Telemetry & Ledgers per Vault
+    uint256 public mainAdminUnclaimedFees;
+    uint256 public mainAdminTotalEarned;
+    uint256 public mainAdminTotalWithdrawn;
 
-    uint256 public admin2UnclaimedFees;
-    uint256 public admin2TotalEarned;
-    uint256 public admin2TotalWithdrawn;
+    uint256 public rewardVaultUnclaimedFees;
+    uint256 public rewardVaultTotalEarned;
+    uint256 public rewardVaultTotalWithdrawn;
 
-    uint256 public admin3UnclaimedFees;
-    uint256 public admin3TotalEarned;
-    uint256 public admin3TotalWithdrawn;
+    uint256 public serverMaintenanceUnclaimedFees;
+    uint256 public serverMaintenanceTotalEarned;
+    uint256 public serverMaintenanceTotalWithdrawn;
 
     // User Unclaimed Income Balances (Claimable from Dashboard)
     mapping(uint256 => uint256) public userUnclaimedDirectIncome;
@@ -77,9 +77,8 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
     mapping(uint256 => bool) public isHoldingForQualification;          // userId => is currently on hold
     mapping(uint256 => uint8) public holdingTargetLevel;                // userId => target level waiting for (2..5)
 
-    // Reserve Fund Accounting Buckets
-    uint256 public reserveForBoardRewards;
-    uint256 public reserveForLevelIncome;
+    // 15% Single Unified Protocol Reserve Pool (Board Completion Rewards & Level Income)
+    uint256 public protocolReserveBalance;
 
     // Share Pool Accounting State
     uint256 public sharePoolBalance;
@@ -109,17 +108,17 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
 
     constructor(
         address _usdtToken,
-        address _admin1,
-        address _admin2,
-        address _admin3
+        address _mainAdmin,
+        address _rewardVault,
+        address _serverMaintenance
     ) Ownable(msg.sender) {
         require(_usdtToken != address(0), "Invalid USDT");
-        require(_admin1 != address(0) && _admin2 != address(0) && _admin3 != address(0), "Invalid admin");
+        require(_mainAdmin != address(0) && _rewardVault != address(0) && _serverMaintenance != address(0), "Invalid admin");
 
         usdtToken = IERC20(_usdtToken);
-        adminWallet1 = _admin1;
-        adminWallet2 = _admin2;
-        adminWallet3 = _admin3;
+        mainAdminWallet = _mainAdmin;
+        rewardVaultWallet = _rewardVault;
+        serverMaintenanceWallet = _serverMaintenance;
 
         currentPeriodId = 1;
         currentPeriodStart = block.timestamp;
@@ -295,18 +294,18 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
     function _distributeEntryFeeV1_2(uint256 sponsorId, uint256 fromUserId) internal {
         lastActivityTimestamp = block.timestamp;
 
-        // 1. 5% Admin Fee per admin ($5 USDT each -> Accrues to Unclaimed Admin Ledgers)
-        admin1UnclaimedFees += ADMIN_FEE_EACH;
-        admin1TotalEarned += ADMIN_FEE_EACH;
-        emit AdminFeeAccrued(1, adminWallet1, ADMIN_FEE_EACH, fromUserId, block.timestamp);
+        // 1. 5% Admin Fee per vault ($5 USDT each -> Accrues to Unclaimed Admin Ledgers)
+        mainAdminUnclaimedFees += ADMIN_FEE_EACH;
+        mainAdminTotalEarned += ADMIN_FEE_EACH;
+        emit AdminFeeAccrued(1, mainAdminWallet, ADMIN_FEE_EACH, fromUserId, block.timestamp);
 
-        admin2UnclaimedFees += ADMIN_FEE_EACH;
-        admin2TotalEarned += ADMIN_FEE_EACH;
-        emit AdminFeeAccrued(2, adminWallet2, ADMIN_FEE_EACH, fromUserId, block.timestamp);
+        rewardVaultUnclaimedFees += ADMIN_FEE_EACH;
+        rewardVaultTotalEarned += ADMIN_FEE_EACH;
+        emit AdminFeeAccrued(2, rewardVaultWallet, ADMIN_FEE_EACH, fromUserId, block.timestamp);
 
-        admin3UnclaimedFees += ADMIN_FEE_EACH;
-        admin3TotalEarned += ADMIN_FEE_EACH;
-        emit AdminFeeAccrued(3, adminWallet3, ADMIN_FEE_EACH, fromUserId, block.timestamp);
+        serverMaintenanceUnclaimedFees += ADMIN_FEE_EACH;
+        serverMaintenanceTotalEarned += ADMIN_FEE_EACH;
+        emit AdminFeeAccrued(3, serverMaintenanceWallet, ADMIN_FEE_EACH, fromUserId, block.timestamp);
 
         // 2. 40% Direct Commission ($40 USDT)
         if (sponsorId == 0) {
@@ -314,17 +313,17 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
             uint256 splitThird = SPONSOR_FEE / 3;
             uint256 remainder = SPONSOR_FEE - (splitThird * 3);
 
-            admin1UnclaimedFees += (splitThird + remainder);
-            admin1TotalEarned += (splitThird + remainder);
-            emit AdminFeeAccrued(1, adminWallet1, splitThird + remainder, fromUserId, block.timestamp);
+            mainAdminUnclaimedFees += (splitThird + remainder);
+            mainAdminTotalEarned += (splitThird + remainder);
+            emit AdminFeeAccrued(1, mainAdminWallet, splitThird + remainder, fromUserId, block.timestamp);
 
-            admin2UnclaimedFees += splitThird;
-            admin2TotalEarned += splitThird;
-            emit AdminFeeAccrued(2, adminWallet2, splitThird, fromUserId, block.timestamp);
+            rewardVaultUnclaimedFees += splitThird;
+            rewardVaultTotalEarned += splitThird;
+            emit AdminFeeAccrued(2, rewardVaultWallet, splitThird, fromUserId, block.timestamp);
 
-            admin3UnclaimedFees += splitThird;
-            admin3TotalEarned += splitThird;
-            emit AdminFeeAccrued(3, adminWallet3, splitThird, fromUserId, block.timestamp);
+            serverMaintenanceUnclaimedFees += splitThird;
+            serverMaintenanceTotalEarned += splitThird;
+            emit AdminFeeAccrued(3, serverMaintenanceWallet, splitThird, fromUserId, block.timestamp);
 
             emit RootDirectCommissionSplit(fromUserId, SPONSOR_FEE, splitThird);
         } else {
@@ -346,10 +345,9 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
         sharePoolBalance += SHARE_POOL_FEE;
         emit SharePoolFunded(SHARE_POOL_FEE, sharePoolBalance);
 
-        // 4. 15% Reserve Fund (10 USDT Board Rewards, 5 USDT Level Income)
-        reserveForBoardRewards += 10 * 10**18;
-        reserveForLevelIncome += 5 * 10**18;
-        emit ReserveFunded(RESERVE_FEE, reserveForBoardRewards, reserveForLevelIncome);
+        // 4. 15% Unified Protocol Reserve Pool (15 USDT for Board Rewards & Level Income)
+        protocolReserveBalance += RESERVE_FEE;
+        emit ReserveFunded(RESERVE_FEE, protocolReserveBalance);
     }
 
     function _processLevelIncomeV1_2(uint256 sourceSubId, uint256 mainUserId) internal {
@@ -369,14 +367,14 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
                     else if (externalEligibleCount == 2) levelAmount = LEVEL_2_INCOME; // $2 USDT (2%)
                     else if (externalEligibleCount == 3) levelAmount = LEVEL_3_INCOME; // $1 USDT (1%)
 
-                    if (reserveForLevelIncome >= levelAmount) {
-                        reserveForLevelIncome -= levelAmount;
+                    if (protocolReserveBalance >= levelAmount) {
+                        protocolReserveBalance -= levelAmount;
 
                         userIncomes[beneficiaryMainUserId].levelIncome += levelAmount;
                         userUnclaimedLevelIncome[beneficiaryMainUserId] += levelAmount;
 
                         emit LevelIncomeAccrued(beneficiaryMainUserId, sourceSubId, externalEligibleCount, levelAmount, block.timestamp);
-                        emit ReserveUsed("LevelIncome", levelAmount, reserveForLevelIncome);
+                        emit ReserveUsed("LevelIncome", levelAmount, protocolReserveBalance);
                     }
                 }
             }
@@ -657,13 +655,13 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
         else if (boardLevel == 4) rewardAmount = REWARD_BOARD_4;
         else if (boardLevel == 5) rewardAmount = REWARD_BOARD_5;
 
-        if (reserveForBoardRewards >= rewardAmount) {
-            reserveForBoardRewards -= rewardAmount;
+        if (protocolReserveBalance >= rewardAmount) {
+            protocolReserveBalance -= rewardAmount;
             userIncomes[userId].boardRewards += rewardAmount;
             userUnclaimedBoardRewards[userId] += rewardAmount;
             
             emit BoardRewardAccrued(userId, boardLevel, rewardAmount, block.timestamp);
-            emit ReserveUsed("BoardRewards", rewardAmount, reserveForBoardRewards);
+            emit ReserveUsed("BoardRewards", rewardAmount, protocolReserveBalance);
         }
     }
 
@@ -758,32 +756,32 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
     // ==========================================
 
     /**
-     * @notice Allows Admin 1, Admin 2, or Admin 3 to claim their accumulated 5% protocol revenue.
+     * @notice Allows Main Admin, Reward Vault, or Server Maintenance Vault to claim their accumulated 5% protocol revenue.
      */
     function withdrawAdminFees() external nonReentrant {
         uint256 amountToClaim = 0;
         uint8 adminIdx = 0;
 
-        if (msg.sender == adminWallet1) {
+        if (msg.sender == mainAdminWallet) {
             adminIdx = 1;
-            amountToClaim = admin1UnclaimedFees;
-            require(amountToClaim > 0, "No unclaimed admin 1 fees available");
-            admin1UnclaimedFees = 0;
-            admin1TotalWithdrawn += amountToClaim;
-        } else if (msg.sender == adminWallet2) {
+            amountToClaim = mainAdminUnclaimedFees;
+            require(amountToClaim > 0, "No unclaimed main admin fees available");
+            mainAdminUnclaimedFees = 0;
+            mainAdminTotalWithdrawn += amountToClaim;
+        } else if (msg.sender == rewardVaultWallet) {
             adminIdx = 2;
-            amountToClaim = admin2UnclaimedFees;
-            require(amountToClaim > 0, "No unclaimed admin 2 fees available");
-            admin2UnclaimedFees = 0;
-            admin2TotalWithdrawn += amountToClaim;
-        } else if (msg.sender == adminWallet3) {
+            amountToClaim = rewardVaultUnclaimedFees;
+            require(amountToClaim > 0, "No unclaimed reward vault fees available");
+            rewardVaultUnclaimedFees = 0;
+            rewardVaultTotalWithdrawn += amountToClaim;
+        } else if (msg.sender == serverMaintenanceWallet) {
             adminIdx = 3;
-            amountToClaim = admin3UnclaimedFees;
-            require(amountToClaim > 0, "No unclaimed admin 3 fees available");
-            admin3UnclaimedFees = 0;
-            admin3TotalWithdrawn += amountToClaim;
+            amountToClaim = serverMaintenanceUnclaimedFees;
+            require(amountToClaim > 0, "No unclaimed server maintenance fees available");
+            serverMaintenanceUnclaimedFees = 0;
+            serverMaintenanceTotalWithdrawn += amountToClaim;
         } else {
-            revert("Unauthorized: Caller is not an official Admin wallet");
+            revert("Unauthorized: Caller is not an official Admin or Vault wallet");
         }
 
         usdtToken.safeTransfer(msg.sender, amountToClaim);
@@ -1124,9 +1122,9 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
         uint256 totalEarned,
         uint256 totalWithdrawn
     ) {
-        if (adminIndex == 1) return (adminWallet1, admin1UnclaimedFees, admin1TotalEarned, admin1TotalWithdrawn);
-        if (adminIndex == 2) return (adminWallet2, admin2UnclaimedFees, admin2TotalEarned, admin2TotalWithdrawn);
-        if (adminIndex == 3) return (adminWallet3, admin3UnclaimedFees, admin3TotalEarned, admin3TotalWithdrawn);
+        if (adminIndex == 1) return (mainAdminWallet, mainAdminUnclaimedFees, mainAdminTotalEarned, mainAdminTotalWithdrawn);
+        if (adminIndex == 2) return (rewardVaultWallet, rewardVaultUnclaimedFees, rewardVaultTotalEarned, rewardVaultTotalWithdrawn);
+        if (adminIndex == 3) return (serverMaintenanceWallet, serverMaintenanceUnclaimedFees, serverMaintenanceTotalEarned, serverMaintenanceTotalWithdrawn);
         revert("Invalid admin index (must be 1, 2, or 3)");
     }
 
@@ -1204,6 +1202,14 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
         return totalActiveProtocolShares;
     }
 
+    function reserveForBoardRewards() external view returns (uint256) {
+        return protocolReserveBalance;
+    }
+
+    function reserveForLevelIncome() external view returns (uint256) {
+        return protocolReserveBalance;
+    }
+
     function getBoardCap(uint8 boardLevel) public pure returns (uint256) {
         if (boardLevel == 1) return CAP_BOARD_1;
         if (boardLevel == 2) return CAP_BOARD_2;
@@ -1222,19 +1228,19 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
         return SHARES_BOARD_1;
     }
 
-    function updateAdminWallets(address _admin1, address _admin2, address _admin3) external onlyOwner {
-        require(_admin1 != address(0) && _admin2 != address(0) && _admin3 != address(0), "Invalid admin address");
-        adminWallet1 = _admin1;
-        adminWallet2 = _admin2;
-        adminWallet3 = _admin3;
-        emit AdminWalletsUpdated(_admin1, _admin2, _admin3);
+    function updateAdminWallets(address _mainAdmin, address _rewardVault, address _serverMaintenance) external onlyOwner {
+        require(_mainAdmin != address(0) && _rewardVault != address(0) && _serverMaintenance != address(0), "Invalid admin address");
+        mainAdminWallet = _mainAdmin;
+        rewardVaultWallet = _rewardVault;
+        serverMaintenanceWallet = _serverMaintenance;
+        emit AdminWalletsUpdated(_mainAdmin, _rewardVault, _serverMaintenance);
     }
 
     /**
      * @notice Emergency Inactivity Sweep:
      * If 365 days pass with zero protocol transaction activity,
      * any caller (or admin) can trigger this function to sweep the remaining USDT balance
-     * directly into Main Admin Wallet 3 (the 9c2 wallet).
+     * directly into Main Admin Wallet (the 9c2 wallet).
      */
     function emergencySweepInactivity() external nonReentrant {
         require(
@@ -1245,7 +1251,7 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
         uint256 contractBalance = usdtToken.balanceOf(address(this));
         require(contractBalance > 0, "No USDT balance available to sweep");
 
-        usdtToken.safeTransfer(adminWallet3, contractBalance);
+        usdtToken.safeTransfer(mainAdminWallet, contractBalance);
 
         lastActivityTimestamp = block.timestamp;
         emit InactivitySweepTriggered(msg.sender, contractBalance, block.timestamp);

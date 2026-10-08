@@ -66,8 +66,8 @@ contract Grow50XEvents {
     );
 
     event CycleCompleted(uint256 indexed cycleId, uint256 indexed userId, address indexed wallet, uint256 timestamp);
-    event ReserveFunded(uint256 totalFunded, uint256 boardRewardsBucket, uint256 levelIncomeBucket);
-    event ReserveUsed(string category, uint256 amount, uint256 remainingBucketBalance);
+    event ReserveFunded(uint256 amountFunded, uint256 newReserveBalance);
+    event ReserveUsed(string category, uint256 amount, uint256 remainingReserveBalance);
     
     event BatchSubIdsCreated(uint256 indexed ownerMainUserId, address indexed wallet, uint256 count, uint256 firstSubId, uint256 lastSubId);
     event AdminWalletsUpdated(address admin1, address admin2, address admin3);
