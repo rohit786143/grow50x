@@ -84,9 +84,9 @@ export default function WalletConnect() {
           onClick={openWalletModal}
           disabled={isLoading}
           id="connect-wallet-btn"
-          className="btn-primary-blue px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl font-bold text-xs sm:text-sm shadow-md flex items-center gap-2 hover:scale-[1.02] transition-all"
+          className="btn-primary-gold px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl font-bold text-xs sm:text-sm shadow-md flex items-center gap-2 hover:scale-[1.02] transition-all"
         >
-          <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+          <span className="w-2 h-2 rounded-full bg-slate-900 animate-ping" />
           {isLoading ? 'Connecting...' : 'Connect Wallet'}
         </button>
       ) : isAdmin ? (
@@ -177,7 +177,7 @@ export default function WalletConnect() {
           )}
 
           {/* Balance Badge */}
-          <div className="hidden md:flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 text-xs shadow-sm">
+          <div className="hidden md:flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-amber-200 text-xs shadow-sm">
             <span className="text-emerald-700 font-bold flex items-center gap-1.5">
               <UsdtIcon className="w-4 h-4" />
               ${usdtBalance} USDT
@@ -190,7 +190,7 @@ export default function WalletConnect() {
           </div>
 
           {/* Connected Wallet Badge */}
-          <div className="flex items-center gap-1.5 bg-sky-50 px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl border border-sky-200 text-[11px] sm:text-xs font-mono font-bold text-sky-700">
+          <div className="flex items-center gap-1.5 bg-amber-50 px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl border border-amber-200 text-[11px] sm:text-xs font-mono font-bold text-amber-900">
             <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
             <span>{formatAddress(account)}</span>
           </div>
@@ -211,4 +211,3 @@ export default function WalletConnect() {
     </>
   );
 }
-

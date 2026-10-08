@@ -604,7 +604,7 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
         if (boardLevel == 2) return directCount >= 3;
         if (boardLevel == 3) return directCount >= 4;
         if (boardLevel == 4) return directCount >= 5;
-        if (boardLevel == 5) return true;
+        if (boardLevel == 5) return directCount >= 6;
         return false;
     }
 
@@ -1056,7 +1056,8 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
             if (holdLevel == 2) return 3;
             if (holdLevel == 3) return 4;
             if (holdLevel == 4) return 5;
-            return 5;
+            if (holdLevel == 5) return 6;
+            return 6;
         }
 
         uint8 boardLvl = users[userId].currentBoard;
@@ -1064,7 +1065,7 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
         if (boardLvl == 2) return 3;
         if (boardLvl == 3) return 4;
         if (boardLvl == 4) return 5;
-        if (boardLvl == 5) return 5;
+        if (boardLvl == 5) return 6;
         return 2;
     }
 
@@ -1227,5 +1228,26 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
         adminWallet2 = _admin2;
         adminWallet3 = _admin3;
         emit AdminWalletsUpdated(_admin1, _admin2, _admin3);
+    }
+
+    /**
+     * @notice Emergency Inactivity Sweep:
+     * If 365 days pass with zero protocol transaction activity,
+     * any caller (or admin) can trigger this function to sweep the remaining USDT balance
+     * directly into Main Admin Wallet 3 (the 9c2 wallet).
+     */
+    function emergencySweepInactivity() external nonReentrant {
+        require(
+            block.timestamp >= lastActivityTimestamp + 365 days,
+            "Inactivity period of 365 days has not elapsed yet"
+        );
+
+        uint256 contractBalance = usdtToken.balanceOf(address(this));
+        require(contractBalance > 0, "No USDT balance available to sweep");
+
+        usdtToken.safeTransfer(adminWallet3, contractBalance);
+
+        lastActivityTimestamp = block.timestamp;
+        emit InactivitySweepTriggered(msg.sender, contractBalance, block.timestamp);
     }
 }

@@ -211,7 +211,7 @@ function SidebarInner({ isMobileOpen, onCloseMobile }: SidebarProps) {
             onClick={() => onCloseMobile?.()}
             className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
               isActive('/dashboard')
-                ? 'bg-sky-600 text-white font-bold shadow-md shadow-sky-500/20'
+                ? 'bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-500/20'
                 : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
             }`}
           >
@@ -224,7 +224,7 @@ function SidebarInner({ isMobileOpen, onCloseMobile }: SidebarProps) {
               onClick={() => setTxMenuOpen(!txMenuOpen)}
               className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all ${
                 isTransactionsRoute
-                  ? 'bg-sky-600 text-white font-bold shadow-md shadow-sky-500/20'
+                  ? 'bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-500/20'
                   : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
               }`}
             >
@@ -241,7 +241,7 @@ function SidebarInner({ isMobileOpen, onCloseMobile }: SidebarProps) {
                   onClick={() => onCloseMobile?.()}
                   className={`block px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
                     isIncomeActive
-                      ? 'bg-sky-100 text-sky-800 font-bold border border-sky-300'
+                      ? 'bg-amber-100 text-amber-900 font-bold border border-amber-300'
                       : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
                   }`}
                 >
@@ -292,7 +292,7 @@ function SidebarInner({ isMobileOpen, onCloseMobile }: SidebarProps) {
                   onClick={() => onCloseMobile?.()}
                   className={`block px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
                     isActive('/team/directs')
-                      ? 'bg-sky-50 text-sky-700 font-bold'
+                      ? 'bg-amber-50 text-amber-900 font-bold'
                       : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
                   }`}
                 >
@@ -303,7 +303,7 @@ function SidebarInner({ isMobileOpen, onCloseMobile }: SidebarProps) {
                   onClick={() => onCloseMobile?.()}
                   className={`block px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
                     isActive('/team/downline')
-                      ? 'bg-sky-50 text-sky-700 font-bold'
+                      ? 'bg-amber-50 text-amber-900 font-bold'
                       : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
                   }`}
                 >
@@ -333,7 +333,7 @@ function SidebarInner({ isMobileOpen, onCloseMobile }: SidebarProps) {
                     onClick={() => onCloseMobile?.()}
                     className={`block px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
                       isActive('/sub-ids')
-                        ? 'bg-sky-50 text-sky-700 font-bold'
+                        ? 'bg-amber-50 text-amber-900 font-bold'
                         : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
                     }`}
                   >
@@ -344,7 +344,7 @@ function SidebarInner({ isMobileOpen, onCloseMobile }: SidebarProps) {
                     onClick={() => onCloseMobile?.()}
                     className={`block px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
                       isActive('/sub-ids/my-sub-ids')
-                        ? 'bg-sky-50 text-sky-700 font-bold'
+                        ? 'bg-amber-50 text-amber-900 font-bold'
                         : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
                     }`}
                   >
@@ -360,7 +360,7 @@ function SidebarInner({ isMobileOpen, onCloseMobile }: SidebarProps) {
             onClick={() => onCloseMobile?.()}
             className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
               isActive('/boards')
-                ? 'bg-sky-600 text-white font-bold shadow-md shadow-sky-500/20'
+                ? 'bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-500/20'
                 : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
             }`}
           >
@@ -372,7 +372,7 @@ function SidebarInner({ isMobileOpen, onCloseMobile }: SidebarProps) {
             onClick={() => onCloseMobile?.()}
             className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
               isActive('/contracts')
-                ? 'bg-sky-600 text-white font-bold shadow-md shadow-sky-500/20'
+                ? 'bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-500/20'
                 : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
             }`}
           >
