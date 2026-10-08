@@ -245,6 +245,20 @@ export function Web3Provider({ children }: { children: ReactNode }) {
         setIsWalletModalOpen(false);
         return;
       }
+    } else if (walletKey === 'tokenpocket') {
+      targetProvider = (window as any).tokenpocket || providers.find((p: any) => p.isTokenPocket) || ((window as any).ethereum?.isTokenPocket ? (window as any).ethereum : null);
+      if (!targetProvider) {
+        window.open(`https://tokenpocket.pro/`, '_blank');
+        setIsWalletModalOpen(false);
+        return;
+      }
+    } else if (walletKey === 'safepal') {
+      targetProvider = (window as any).safepal || providers.find((p: any) => p.isSafePal) || ((window as any).ethereum?.isSafePal ? (window as any).ethereum : null);
+      if (!targetProvider) {
+        window.open(`https://safepal.com/`, '_blank');
+        setIsWalletModalOpen(false);
+        return;
+      }
     } else if (walletKey === 'coinbase') {
       targetProvider = (window as any).coinbaseWalletExtension || providers.find((p: any) => p.isCoinbaseWallet) || ((window as any).ethereum?.isCoinbaseWallet ? (window as any).ethereum : null);
       if (!targetProvider) {

@@ -61,21 +61,21 @@ export default function AppLayoutClient({ children }: { children: React.ReactNod
       </header>
 
       {/* Main Body Container with Top Padding for Fixed Header */}
-      <div className="pt-16 sm:pt-20 flex-1 flex flex-col min-h-screen">
+      <div className="pt-16 sm:pt-20 flex-1 flex flex-col min-h-screen relative z-10">
         <NetworkBanner />
 
         {/* Conditional Layout: Full width on Home Landing Page, Sidebar on Inner App Pages */}
         {isHomePage ? (
-          <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 lg:p-8">
+          <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 lg:p-8 relative z-10">
             {children}
           </main>
         ) : (
-          <div className="flex-1 flex max-w-7xl w-full mx-auto">
+          <div className="flex-1 flex max-w-7xl w-full mx-auto relative z-10">
             <Sidebar
               isMobileOpen={isMobileMenuOpen}
               onCloseMobile={() => setIsMobileMenuOpen(false)}
             />
-            <main className="flex-1 p-3 sm:p-6 lg:p-8 overflow-y-auto w-full min-w-0">
+            <main className="flex-1 p-3 sm:p-6 lg:p-8 overflow-y-auto w-full min-w-0 relative z-10">
               {children}
             </main>
           </div>

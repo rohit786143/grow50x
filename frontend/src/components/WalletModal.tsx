@@ -34,6 +34,8 @@ export default function WalletModal({ isOpen, onClose, onSelectWallet, isLoading
   const isMetaMaskInstalled = typeof window !== 'undefined' && Boolean((window as any).ethereum?.isMetaMask || (window as any).ethereum);
   const isTrustInstalled = typeof window !== 'undefined' && Boolean((window as any).trustwallet || (window as any).ethereum?.isTrust);
   const isCoinbaseInstalled = typeof window !== 'undefined' && Boolean((window as any).coinbaseWalletExtension);
+  const isTokenPocketInstalled = typeof window !== 'undefined' && Boolean((window as any).tokenpocket || (window as any).ethereum?.isTokenPocket);
+  const isSafePalInstalled = typeof window !== 'undefined' && Boolean((window as any).safepal || (window as any).ethereum?.isSafePal);
 
   const wallets = [
     {
@@ -62,6 +64,30 @@ export default function WalletModal({ isOpen, onClose, onSelectWallet, isLoading
           <path d="M16 6L7 11v8c0 5.5 3.8 10.7 9 12 5.2-1.3 9-6.5 9-12v-8l-9-5z" fill="#FFFFFF"/>
           <path d="M16 8.5L9 12.4v6.2c0 4.3 3 8.3 7 9.4 4-1.1 7-5.1 7-9.4v-6.2L16 8.5z" fill="#0500FF"/>
         </svg>
+      ),
+    },
+    {
+      id: 'tokenpocket',
+      name: 'TokenPocket',
+      description: 'Popular multi-chain Web3 crypto wallet & dApp browser',
+      badge: isTokenPocketInstalled ? 'Detected' : 'BEP-20',
+      installed: isTokenPocketInstalled,
+      icon: (
+        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-white font-black text-sm shadow-md">
+          TP
+        </div>
+      ),
+    },
+    {
+      id: 'safepal',
+      name: 'SafePal Wallet',
+      description: 'Secure hardware & software crypto wallet',
+      badge: isSafePalInstalled ? 'Detected' : 'Hardware',
+      installed: isSafePalInstalled,
+      icon: (
+        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-600 to-sky-600 flex items-center justify-center text-white font-black text-sm shadow-md">
+          S
+        </div>
       ),
     },
     {

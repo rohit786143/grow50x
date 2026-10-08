@@ -4,7 +4,7 @@ import React from 'react';
 
 export default function MotherboardBackground() {
   return (
-    <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden opacity-85 select-none">
+    <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden opacity-80 select-none">
       <svg
         className="w-full h-full"
         xmlns="http://www.w3.org/2000/svg"
