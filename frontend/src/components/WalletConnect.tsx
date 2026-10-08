@@ -80,18 +80,46 @@ export default function WalletConnect() {
     <>
       {!account ? (
         /* Case 1: Wallet NOT Connected */
-        <button
-          onClick={openWalletModal}
-          disabled={isLoading}
-          id="connect-wallet-btn"
-          className="btn-primary-gold px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl font-bold text-xs sm:text-sm shadow-md flex items-center gap-2 hover:scale-[1.02] transition-all"
-        >
-          <span className="w-2 h-2 rounded-full bg-slate-900 animate-ping" />
-          {isLoading ? 'Connecting...' : 'Connect Wallet'}
-        </button>
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          {pathname !== '/register' && (
+            <Link
+              href="/register"
+              className="btn-primary-emerald font-extrabold px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-[11px] sm:text-xs shadow-md flex items-center gap-1 shrink-0"
+            >
+              <span>🚀</span> <span className="hidden xs:inline">Register Now</span><span className="xs:hidden">Register</span>
+            </Link>
+          )}
+
+          <button
+            onClick={addUsdtToMetaMask}
+            className="hidden md:inline-flex bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-2.5 py-1.5 rounded-xl text-xs border border-slate-200 transition-colors shrink-0 items-center gap-1"
+            title="Import USDT Token into MetaMask"
+          >
+            ➕ Add to MetaMask
+          </button>
+
+          {chainId !== BSC_CHAIN_ID && (
+            <button
+              onClick={switchNetwork}
+              className="hidden sm:inline-flex bg-amber-500 hover:bg-amber-600 text-white font-bold px-2 py-1.5 sm:px-2.5 sm:py-2 rounded-xl text-[11px] sm:text-xs transition-colors shrink-0 items-center gap-1"
+            >
+              ⚠️ <span className="hidden md:inline">Switch Network</span><span className="md:hidden">Switch</span>
+            </button>
+          )}
+
+          <button
+            onClick={openWalletModal}
+            disabled={isLoading}
+            id="connect-wallet-btn"
+            className="btn-primary-gold px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-xl font-bold text-xs sm:text-sm shadow-md flex items-center gap-1.5 hover:scale-[1.02] transition-all shrink-0"
+          >
+            <span className="w-2 h-2 rounded-full bg-slate-900 animate-ping" />
+            {isLoading ? 'Connecting...' : 'Connect Wallet'}
+          </button>
+        </div>
       ) : isAdmin ? (
         /* Case 4: OFFICIAL ADMIN WALLET */
-        <div className="flex items-center gap-1.5 sm:gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
           <Link
             href="/admin"
             className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[11px] sm:text-xs shadow-md flex items-center gap-1.5 transition-all hover:scale-105"
@@ -118,13 +146,13 @@ export default function WalletConnect() {
       ) : !isRegistered ? (
 
         /* Case 2: Connected but UNREGISTERED */
-        <div className="flex flex-wrap items-center gap-1.5 sm:gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {pathname !== '/register' && (
             <Link
               href="/register"
-              className="btn-primary-emerald font-extrabold px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[11px] sm:text-xs shadow-md flex items-center gap-1.5"
+              className="btn-primary-emerald font-extrabold px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-[11px] sm:text-xs shadow-md flex items-center gap-1 shrink-0"
             >
-              <span>🚀</span> Register Now
+              <span>🚀</span> <span className="hidden xs:inline">Register Now</span><span className="xs:hidden">Register</span>
             </Link>
           )}
 
@@ -133,7 +161,7 @@ export default function WalletConnect() {
             <button
               onClick={claimFaucetUsdt}
               disabled={isClaimingFaucet}
-              className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold px-2.5 py-1.5 rounded-xl text-[11px] sm:text-xs border border-emerald-200 transition-colors flex items-center gap-1"
+              className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold px-2 py-1.5 rounded-xl text-[11px] sm:text-xs border border-emerald-200 transition-colors flex items-center gap-1 shrink-0"
               title="Claim 1,000 Free Testnet USDT"
             >
               <span>🎁</span>
@@ -145,7 +173,7 @@ export default function WalletConnect() {
           {/* Add to MetaMask Button */}
           <button
             onClick={addUsdtToMetaMask}
-            className="hidden sm:inline-block bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-2.5 py-1.5 rounded-xl text-xs border border-slate-200 transition-colors"
+            className="hidden md:inline-flex bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-2.5 py-1.5 rounded-xl text-xs border border-slate-200 transition-colors shrink-0 items-center gap-1"
             title="Import USDT Token into MetaMask"
           >
             ➕ Add to MetaMask
@@ -154,21 +182,21 @@ export default function WalletConnect() {
           {chainId !== BSC_CHAIN_ID && (
             <button
               onClick={switchNetwork}
-              className="bg-amber-500 hover:bg-amber-600 text-white font-bold px-2.5 py-1.5 rounded-xl text-[11px] sm:text-xs transition-colors"
+              className="bg-amber-500 hover:bg-amber-600 text-white font-bold px-2 py-1.5 sm:px-2.5 sm:py-2 rounded-xl text-[11px] sm:text-xs transition-colors shrink-0 items-center gap-1"
             >
-              ⚠️ Switch Network
+              ⚠️ <span className="hidden sm:inline">Switch Network</span><span className="sm:hidden">Switch</span>
             </button>
           )}
         </div>
       ) : (
         /* Case 3: REGISTERED & LOGGED IN */
-        <div className="flex items-center gap-1.5 sm:gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {/* Testnet Faucet Button */}
           {isTestnet && (
             <button
               onClick={claimFaucetUsdt}
               disabled={isClaimingFaucet}
-              className="hidden sm:flex bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold px-2.5 py-1.5 rounded-xl text-xs border border-emerald-200 transition-colors items-center gap-1"
+              className="hidden lg:flex bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold px-2.5 py-1.5 rounded-xl text-xs border border-emerald-200 transition-colors items-center gap-1 shrink-0"
               title="Claim 1,000 Free Testnet USDT"
             >
               <span>🎁</span>
@@ -177,7 +205,7 @@ export default function WalletConnect() {
           )}
 
           {/* Balance Badge */}
-          <div className="hidden md:flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-amber-200 text-xs shadow-sm">
+          <div className="hidden lg:flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-amber-200 text-xs shadow-sm shrink-0">
             <span className="text-emerald-700 font-bold flex items-center gap-1.5">
               <UsdtIcon className="w-4 h-4" />
               ${usdtBalance} USDT
@@ -190,7 +218,7 @@ export default function WalletConnect() {
           </div>
 
           {/* Connected Wallet Badge */}
-          <div className="flex items-center gap-1.5 bg-amber-50 px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl border border-amber-200 text-[11px] sm:text-xs font-mono font-bold text-amber-900">
+          <div className="flex items-center gap-1.5 bg-amber-50 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl border border-amber-200 text-[11px] sm:text-xs font-mono font-bold text-amber-900 shrink-0">
             <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
             <span>{formatAddress(account)}</span>
           </div>
@@ -198,7 +226,7 @@ export default function WalletConnect() {
           {/* Logout / Disconnect Button */}
           <button
             onClick={handleLogout}
-            className="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 hover:border-rose-300 p-1.5 sm:px-2.5 sm:py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1 shadow-sm"
+            className="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 hover:border-rose-300 p-1.5 sm:px-2.5 sm:py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1 shadow-sm shrink-0"
             title="Disconnect Wallet & Logout"
           >
             <svg className="w-4 h-4 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
