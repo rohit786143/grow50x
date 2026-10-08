@@ -81,14 +81,12 @@ export default function WalletConnect() {
       {!account ? (
         /* Case 1: Wallet NOT Connected */
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          {pathname !== '/register' && (
-            <Link
-              href="/register"
-              className="btn-primary-emerald font-extrabold px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-[11px] sm:text-xs shadow-md flex items-center gap-1 shrink-0"
-            >
-              <span>🚀</span> <span className="hidden xs:inline">Register Now</span><span className="xs:hidden">Register</span>
-            </Link>
-          )}
+          <Link
+            href="/register"
+            className="hidden sm:inline-flex btn-primary-emerald font-extrabold px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs shadow-md items-center gap-1 shrink-0"
+          >
+            <span>🚀</span> <span>Register Now</span>
+          </Link>
 
           <button
             onClick={addUsdtToMetaMask}
@@ -101,9 +99,9 @@ export default function WalletConnect() {
           {chainId !== BSC_CHAIN_ID && (
             <button
               onClick={switchNetwork}
-              className="hidden sm:inline-flex bg-amber-500 hover:bg-amber-600 text-white font-bold px-2 py-1.5 sm:px-2.5 sm:py-2 rounded-xl text-[11px] sm:text-xs transition-colors shrink-0 items-center gap-1"
+              className="hidden sm:inline-flex bg-amber-500 hover:bg-amber-600 text-white font-bold px-2.5 py-1.5 rounded-xl text-xs transition-colors shrink-0 items-center gap-1"
             >
-              ⚠️ <span className="hidden md:inline">Switch Network</span><span className="md:hidden">Switch</span>
+              ⚠️ <span>Switch Network</span>
             </button>
           )}
 
@@ -111,7 +109,7 @@ export default function WalletConnect() {
             onClick={openWalletModal}
             disabled={isLoading}
             id="connect-wallet-btn"
-            className="btn-primary-gold px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-xl font-bold text-xs sm:text-sm shadow-md flex items-center gap-1.5 hover:scale-[1.02] transition-all shrink-0"
+            className="btn-primary-gold px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl font-bold text-xs sm:text-sm shadow-md flex items-center gap-1.5 hover:scale-[1.02] transition-all shrink-0"
           >
             <span className="w-2 h-2 rounded-full bg-slate-900 animate-ping" />
             {isLoading ? 'Connecting...' : 'Connect Wallet'}
@@ -122,12 +120,12 @@ export default function WalletConnect() {
         <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
           <Link
             href="/admin"
-            className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[11px] sm:text-xs shadow-md flex items-center gap-1.5 transition-all hover:scale-105"
+            className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[11px] sm:text-xs shadow-md flex items-center gap-1.5 transition-all hover:scale-105"
           >
-            <span>👑</span> Admin #{adminIdx} Console
+            <span>👑</span> <span className="hidden xs:inline">Admin #{adminIdx}</span><span className="xs:hidden">Admin</span>
           </Link>
 
-          <div className="flex items-center gap-1.5 bg-amber-50 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl border border-amber-300 text-[11px] sm:text-xs font-mono font-bold text-amber-900 shadow-sm">
+          <div className="flex items-center gap-1.5 bg-amber-50 px-2 py-1.5 sm:px-3 sm:py-2 rounded-xl border border-amber-300 text-[11px] sm:text-xs font-mono font-bold text-amber-900 shadow-sm">
             <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
             <span>{formatAddress(account)}</span>
           </div>
@@ -152,22 +150,8 @@ export default function WalletConnect() {
               href="/register"
               className="btn-primary-emerald font-extrabold px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-[11px] sm:text-xs shadow-md flex items-center gap-1 shrink-0"
             >
-              <span>🚀</span> <span className="hidden xs:inline">Register Now</span><span className="xs:hidden">Register</span>
+              <span>🚀</span> <span>Register</span>
             </Link>
-          )}
-
-          {/* Testnet Faucet Button */}
-          {isTestnet && (
-            <button
-              onClick={claimFaucetUsdt}
-              disabled={isClaimingFaucet}
-              className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold px-2 py-1.5 rounded-xl text-[11px] sm:text-xs border border-emerald-200 transition-colors flex items-center gap-1 shrink-0"
-              title="Claim 1,000 Free Testnet USDT"
-            >
-              <span>🎁</span>
-              <span className="hidden xs:inline">{isClaimingFaucet ? 'Claiming...' : 'Get 1,000 USDT'}</span>
-              <span className="xs:hidden">USDT</span>
-            </button>
           )}
 
           {/* Add to MetaMask Button */}
@@ -182,9 +166,9 @@ export default function WalletConnect() {
           {chainId !== BSC_CHAIN_ID && (
             <button
               onClick={switchNetwork}
-              className="bg-amber-500 hover:bg-amber-600 text-white font-bold px-2 py-1.5 sm:px-2.5 sm:py-2 rounded-xl text-[11px] sm:text-xs transition-colors shrink-0 items-center gap-1"
+              className="hidden sm:inline-flex bg-amber-500 hover:bg-amber-600 text-white font-bold px-2 py-1.5 sm:px-2.5 sm:py-2 rounded-xl text-[11px] sm:text-xs transition-colors shrink-0 items-center gap-1"
             >
-              ⚠️ <span className="hidden sm:inline">Switch Network</span><span className="sm:hidden">Switch</span>
+              ⚠️ <span>Switch Network</span>
             </button>
           )}
         </div>

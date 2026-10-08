@@ -18,16 +18,16 @@ export default function AppLayoutClient({ children }: { children: React.ReactNod
       {/* 📌 Top Header Bar 100% FIXED at top (Stays Static on Scroll) */}
       <header
         style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999 }}
-        className="w-full bg-white/95 backdrop-blur-md px-3 sm:px-6 py-2.5 sm:py-3 shadow-md electrical-header-string"
+        className="w-full max-w-full bg-white/95 backdrop-blur-md px-2.5 sm:px-6 py-2 sm:py-3 shadow-md electrical-header-string overflow-hidden"
       >
         <div className="electrical-pulse-beam" />
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 relative z-10">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-1.5 sm:gap-2 relative z-10 w-full">
           {/* Left: Hamburger button (on mobile) & Logo */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             {!isHomePage && (
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="lg:hidden p-2 rounded-xl bg-amber-50/80 border border-amber-200 text-amber-900 hover:bg-amber-100 transition-colors focus:outline-none"
+                className="lg:hidden p-1.5 rounded-xl bg-amber-50/80 border border-amber-200 text-amber-900 hover:bg-amber-100 transition-colors focus:outline-none shrink-0"
                 aria-label="Toggle Navigation Menu"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -40,18 +40,18 @@ export default function AppLayoutClient({ children }: { children: React.ReactNod
               </button>
             )}
 
-            <Link href="/" className="flex items-center gap-2">
+            <Link href="/" className="flex items-center gap-1.5 shrink-0">
               <img
                 src="/logo.png"
                 alt="GROW 50X Official Logo"
-                style={{ maxHeight: '42px', maxWidth: '170px', width: 'auto', height: 'auto', objectFit: 'contain' }}
-                className="h-9 sm:h-11 w-auto hover:scale-105 transition-transform"
+                style={{ maxHeight: '36px', maxWidth: '140px', width: 'auto', height: 'auto', objectFit: 'contain' }}
+                className="h-8 sm:h-11 w-auto hover:scale-105 transition-transform"
               />
             </Link>
           </div>
 
           {/* Right: Wallet & Top Actions */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             <WalletConnect />
           </div>
         </div>
