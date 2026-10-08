@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import WalletConnect from './WalletConnect';
 import Sidebar from './Sidebar';
 import NetworkBanner from './NetworkBanner';
+import MotherboardBackground from './MotherboardBackground';
 import { Web3Provider } from '../context/Web3Context';
 
 export default function AppLayoutClient({ children }: { children: React.ReactNode }) {
@@ -15,6 +16,8 @@ export default function AppLayoutClient({ children }: { children: React.ReactNod
 
   return (
     <Web3Provider>
+      {/* ⚡ Animated Golden Motherboard Circuit Background (Behind All UI) */}
+      <MotherboardBackground />
       {/* 📌 Top Header Bar 100% FIXED at top (Stays Static on Scroll) */}
       <header
         style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999 }}
