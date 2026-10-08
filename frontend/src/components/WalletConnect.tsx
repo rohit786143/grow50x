@@ -88,14 +88,6 @@ export default function WalletConnect() {
             <span>🚀</span> <span>Register Now</span>
           </Link>
 
-          <button
-            onClick={addUsdtToMetaMask}
-            className="hidden md:inline-flex bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-2.5 py-1.5 rounded-xl text-xs border border-slate-200 transition-colors shrink-0 items-center gap-1"
-            title="Import USDT Token into MetaMask"
-          >
-            ➕ Add to MetaMask
-          </button>
-
           {chainId !== BSC_CHAIN_ID && (
             <button
               onClick={switchNetwork}
@@ -153,15 +145,6 @@ export default function WalletConnect() {
               <span>🚀</span> <span>Register</span>
             </Link>
           )}
-
-          {/* Add to MetaMask Button */}
-          <button
-            onClick={addUsdtToMetaMask}
-            className="hidden md:inline-flex bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-2.5 py-1.5 rounded-xl text-xs border border-slate-200 transition-colors shrink-0 items-center gap-1"
-            title="Import USDT Token into MetaMask"
-          >
-            ➕ Add to MetaMask
-          </button>
 
           {chainId !== BSC_CHAIN_ID && (
             <button
