@@ -978,7 +978,7 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
     function finalizeSharePeriod() external nonReentrant {
         require(
             block.timestamp >= nextPeriodTargetTimestamp,
-            "Share pool cutoff date (9th/19th/29th) not reached yet"
+            "Share pool cutoff date (3rd/13th/23rd) not reached yet"
         );
         require(totalActiveProtocolShares > 0, "No active shares");
 
@@ -1001,16 +1001,34 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
     }
 
     function _calculateNextCutoff(uint256 currentTimestamp) internal pure returns (uint256) {
-        (uint256 year, uint256 month, uint256 day) = _timestampToDate(currentTimestamp);
+        // Dubai Timezone (GST) is UTC+4 hours
+        uint256 dubaiTimestamp = currentTimestamp + 4 hours;
+        (uint256 year, uint256 month, ) = _timestampToDate(dubaiTimestamp);
 
-        if (day < 9) return _toTimestamp(year, month, 9) + 23 hours + 59 minutes + 59 seconds;
-        if (day < 19) return _toTimestamp(year, month, 19) + 23 hours + 59 minutes + 59 seconds;
+        // Closing cutoffs occur at 23:59:59 Dubai Time (GST) on 3rd, 13th, and 23rd of every month
+        uint256 cutoff3 = _toTimestamp(year, month, 3) + 23 hours + 59 minutes + 59 seconds - 4 hours;
+        if (currentTimestamp < cutoff3) {
+            return cutoff3;
+        }
 
-        (uint256 lastYear, uint256 lastMonth, uint256 lastDay) = _getLastDayOfMonth(year, month);
-        if (day < lastDay) return _toTimestamp(lastYear, lastMonth, lastDay) + 23 hours + 59 minutes + 59 seconds;
+        uint256 cutoff13 = _toTimestamp(year, month, 13) + 23 hours + 59 minutes + 59 seconds - 4 hours;
+        if (currentTimestamp < cutoff13) {
+            return cutoff13;
+        }
 
-        if (month == 12) return _toTimestamp(year + 1, 1, 9) + 23 hours + 59 minutes + 59 seconds;
-        return _toTimestamp(year, month + 1, 9) + 23 hours + 59 minutes + 59 seconds;
+        uint256 cutoff23 = _toTimestamp(year, month, 23) + 23 hours + 59 minutes + 59 seconds - 4 hours;
+        if (currentTimestamp < cutoff23) {
+            return cutoff23;
+        }
+
+        // After the 23rd, the next closing is the 3rd of the following month
+        uint256 nextYear = year;
+        uint256 nextMonth = month + 1;
+        if (nextMonth > 12) {
+            nextMonth = 1;
+            nextYear = year + 1;
+        }
+        return _toTimestamp(nextYear, nextMonth, 3) + 23 hours + 59 minutes + 59 seconds - 4 hours;
     }
 
     function _getLastDayOfMonth(uint256 year, uint256 month) internal pure returns (uint256 y, uint256 m, uint256 d) {

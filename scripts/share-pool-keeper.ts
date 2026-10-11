@@ -1,18 +1,18 @@
 import { ethers } from "hardhat";
 
 /**
- * GROW 50X V4 - AUTOMATED 10-DAY SHARE POOL KEEPER SERVICE
- * Scheduled Execution: Dates 9th, 19th, and 29th of every month at 00:00 GST (Dubai Time UTC+4).
+ * GROW 50X - AUTOMATED 10-DAY SHARE POOL KEEPER SERVICE
+ * Scheduled Execution: Dates 3rd, 13th, and 23rd of every month at 23:59:59 GST (Dubai Time UTC+4).
  * 
  * Function:
- * 1. Checks if 10-day share period has elapsed or scheduled Dubai GST date reached.
- * 2. Automatically executes finalizeSharePeriod() on Grow50XCoreV4 contract (zero admin intervention).
+ * 1. Checks if scheduled Dubai GST cutoff date (3rd, 13th, 23rd) is reached.
+ * 2. Automatically executes finalizeSharePeriod() on Grow50XCore contract (zero admin intervention).
  * 3. Auto-dispatches accumulated share pool rewards to all eligible protocol share holders.
  */
 
 export async function runSharePoolKeeper(coreAddress: string) {
   console.log("========================================================================");
-  console.log("   GROW 50X V4 - AUTOMATED SHARE POOL KEEPER (DUBAI GST SCHEDULE)");
+  console.log("   GROW 50X - AUTOMATED SHARE POOL KEEPER (3rd, 13th, 23rd DUBAI GST)");
   console.log("========================================================================");
 
   const [keeperSigner] = await ethers.getSigners();

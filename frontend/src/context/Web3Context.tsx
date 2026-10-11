@@ -228,51 +228,269 @@ export function Web3Provider({ children }: { children: ReactNode }) {
 
     const currentUrl = window.location.href;
     const domain = window.location.host;
-    const providers = (window as any).ethereum?.providers || [];
+    const pathname = window.location.pathname;
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const providers: any[] = (window as any).ethereum?.providers || [];
     let targetProvider: any = null;
 
-    if (walletKey === 'metamask') {
-      targetProvider = providers.find((p: any) => p.isMetaMask) || ((window as any).ethereum?.isMetaMask ? (window as any).ethereum : null) || (window as any).ethereum;
-      if (!targetProvider) {
-        window.open(`https://metamask.app.link/dapp/${domain}`, '_blank');
-        setIsWalletModalOpen(false);
-        return;
-      }
-    } else if (walletKey === 'trust') {
-      targetProvider = (window as any).trustwallet || providers.find((p: any) => p.isTrust) || ((window as any).ethereum?.isTrust ? (window as any).ethereum : null);
-      if (!targetProvider) {
-        window.open(`https://link.trustwallet.com/open_url?coin_id=60&url=${encodeURIComponent(currentUrl)}`, '_blank');
-        setIsWalletModalOpen(false);
-        return;
-      }
-    } else if (walletKey === 'tokenpocket') {
-      targetProvider = (window as any).tokenpocket || providers.find((p: any) => p.isTokenPocket) || ((window as any).ethereum?.isTokenPocket ? (window as any).ethereum : null);
-      if (!targetProvider) {
-        window.open(`https://tokenpocket.pro/`, '_blank');
-        setIsWalletModalOpen(false);
-        return;
-      }
-    } else if (walletKey === 'safepal') {
-      targetProvider = (window as any).safepal || providers.find((p: any) => p.isSafePal) || ((window as any).ethereum?.isSafePal ? (window as any).ethereum : null);
-      if (!targetProvider) {
-        window.open(`https://safepal.com/`, '_blank');
-        setIsWalletModalOpen(false);
-        return;
-      }
-    } else if (walletKey === 'coinbase') {
-      targetProvider = (window as any).coinbaseWalletExtension || providers.find((p: any) => p.isCoinbaseWallet) || ((window as any).ethereum?.isCoinbaseWallet ? (window as any).ethereum : null);
-      if (!targetProvider) {
-        window.open(`https://go.cb-wallet.com/dapp?cb_url=${encodeURIComponent(currentUrl)}`, '_blank');
-        setIsWalletModalOpen(false);
-        return;
-      }
-    } else {
-      targetProvider = (window as any).ethereum;
-      if (!targetProvider) {
-        window.open(`https://metamask.app.link/dapp/${domain}`, '_blank');
-        setIsWalletModalOpen(false);
-        return;
-      }
+    switch (walletKey) {
+      case 'metamask':
+        targetProvider =
+          providers.find((p: any) => p.isMetaMask && !p.isTokenPocket && !p.isTrust && !p.isOkxWallet) ||
+          ((window as any).ethereum?.isMetaMask ? (window as any).ethereum : null) ||
+          (window as any).ethereum;
+        if (!targetProvider) {
+          if (isMobile) {
+            window.open(`https://metamask.app.link/dapp/${domain}${pathname}`, '_blank');
+          } else {
+            window.open('https://metamask.io/download/', '_blank');
+          }
+          setIsWalletModalOpen(false);
+          return;
+        }
+        break;
+
+      case 'trust':
+        targetProvider =
+          (window as any).trustwallet ||
+          providers.find((p: any) => p.isTrust) ||
+          ((window as any).ethereum?.isTrust ? (window as any).ethereum : null);
+        if (!targetProvider) {
+          if (isMobile) {
+            window.open(`https://link.trustwallet.com/open_url?coin_id=60&url=${encodeURIComponent(currentUrl)}`, '_blank');
+          } else {
+            window.open('https://trustwallet.com/download', '_blank');
+          }
+          setIsWalletModalOpen(false);
+          return;
+        }
+        break;
+
+      case 'coinbase':
+        targetProvider =
+          (window as any).coinbaseWalletExtension ||
+          providers.find((p: any) => p.isCoinbaseWallet) ||
+          ((window as any).ethereum?.isCoinbaseWallet ? (window as any).ethereum : null);
+        if (!targetProvider) {
+          if (isMobile) {
+            window.open(`https://go.cb-wallet.com/dapp?cb_url=${encodeURIComponent(currentUrl)}`, '_blank');
+          } else {
+            window.open('https://www.coinbase.com/wallet', '_blank');
+          }
+          setIsWalletModalOpen(false);
+          return;
+        }
+        break;
+
+      case 'rainbow':
+        targetProvider =
+          (window as any).rainbow ||
+          providers.find((p: any) => p.isRainbow) ||
+          ((window as any).ethereum?.isRainbow ? (window as any).ethereum : null);
+        if (!targetProvider) {
+          if (isMobile) {
+            window.open(`https://rnbwapp.com/wc?uri=${encodeURIComponent(currentUrl)}`, '_blank');
+          } else {
+            window.open('https://rainbow.me/download', '_blank');
+          }
+          setIsWalletModalOpen(false);
+          return;
+        }
+        break;
+
+      case 'zerion':
+        targetProvider =
+          (window as any).zerionWallet ||
+          providers.find((p: any) => p.isZerion) ||
+          ((window as any).ethereum?.isZerion ? (window as any).ethereum : null);
+        if (!targetProvider) {
+          window.open('https://zerion.io/', '_blank');
+          setIsWalletModalOpen(false);
+          return;
+        }
+        break;
+
+      case 'okx':
+        targetProvider =
+          (window as any).okxwallet ||
+          providers.find((p: any) => p.isOkxWallet) ||
+          ((window as any).ethereum?.isOkxWallet ? (window as any).ethereum : null);
+        if (!targetProvider) {
+          if (isMobile) {
+            window.open(`okx://wallet/dapp/details?dappUrl=${encodeURIComponent(currentUrl)}`, '_blank');
+          } else {
+            window.open('https://www.okx.com/web3', '_blank');
+          }
+          setIsWalletModalOpen(false);
+          return;
+        }
+        break;
+
+      case 'binance':
+        targetProvider =
+          (window as any).BinanceChain ||
+          providers.find((p: any) => p.isBinance) ||
+          ((window as any).ethereum?.isBinance ? (window as any).ethereum : null);
+        if (!targetProvider) {
+          if (isMobile) {
+            window.open(`bnc://app.binance.com/cedafi/dapp?url=${encodeURIComponent(currentUrl)}`, '_blank');
+          } else {
+            window.open('https://www.binance.com/en/web3wallet', '_blank');
+          }
+          setIsWalletModalOpen(false);
+          return;
+        }
+        break;
+
+      case 'bitget':
+        targetProvider =
+          (window as any).bitkeep?.ethereum ||
+          (window as any).bitgetWallet?.ethereum ||
+          providers.find((p: any) => p.isBitKeep) ||
+          null;
+        if (!targetProvider) {
+          if (isMobile) {
+            window.open(`https://bkcode.vip?action=dapp&url=${encodeURIComponent(currentUrl)}`, '_blank');
+          } else {
+            window.open('https://web3.bitget.com/', '_blank');
+          }
+          setIsWalletModalOpen(false);
+          return;
+        }
+        break;
+
+      case 'safepal':
+        targetProvider =
+          (window as any).safepal ||
+          (window as any).safepalProvider ||
+          providers.find((p: any) => p.isSafePal) ||
+          ((window as any).ethereum?.isSafePal ? (window as any).ethereum : null);
+        if (!targetProvider) {
+          if (isMobile) {
+            window.open(`https://link.safepal.io/dapp/${encodeURIComponent(currentUrl)}`, '_blank');
+          } else {
+            window.open('https://safepal.com/download', '_blank');
+          }
+          setIsWalletModalOpen(false);
+          return;
+        }
+        break;
+
+      case 'tokenpocket':
+        targetProvider =
+          (window as any).tokenpocket ||
+          providers.find((p: any) => p.isTokenPocket) ||
+          ((window as any).ethereum?.isTokenPocket ? (window as any).ethereum : null);
+        if (!targetProvider) {
+          if (isMobile) {
+            window.open(`tpdapp://open?params=${encodeURIComponent(JSON.stringify({ url: currentUrl }))}`, '_blank');
+          } else {
+            window.open('https://tokenpocket.pro/', '_blank');
+          }
+          setIsWalletModalOpen(false);
+          return;
+        }
+        break;
+
+      case 'phantom':
+        targetProvider =
+          (window as any).phantom?.ethereum ||
+          providers.find((p: any) => p.isPhantom) ||
+          ((window as any).ethereum?.isPhantom ? (window as any).ethereum : null);
+        if (!targetProvider) {
+          if (isMobile) {
+            window.open(`https://phantom.app/ul/browse/${encodeURIComponent(currentUrl)}`, '_blank');
+          } else {
+            window.open('https://phantom.app/download', '_blank');
+          }
+          setIsWalletModalOpen(false);
+          return;
+        }
+        break;
+
+      case 'rabby':
+        targetProvider =
+          (window as any).rabby ||
+          providers.find((p: any) => p.isRabby) ||
+          ((window as any).ethereum?.isRabby ? (window as any).ethereum : null);
+        if (!targetProvider) {
+          window.open('https://rabby.io/', '_blank');
+          setIsWalletModalOpen(false);
+          return;
+        }
+        break;
+
+      case '1inch':
+        targetProvider =
+          (window as any).oneInch ||
+          providers.find((p: any) => p.isOneInch) ||
+          ((window as any).ethereum?.isOneInch ? (window as any).ethereum : null);
+        if (!targetProvider) {
+          window.open('https://1inch.io/wallet/', '_blank');
+          setIsWalletModalOpen(false);
+          return;
+        }
+        break;
+
+      case 'coin98':
+        targetProvider =
+          (window as any).coin98?.provider ||
+          providers.find((p: any) => p.isCoin98) ||
+          ((window as any).ethereum?.isCoin98 ? (window as any).ethereum : null);
+        if (!targetProvider) {
+          window.open('https://coin98.com/wallet', '_blank');
+          setIsWalletModalOpen(false);
+          return;
+        }
+        break;
+
+      case 'imtoken':
+        targetProvider =
+          (window as any).imToken ||
+          providers.find((p: any) => p.isImToken) ||
+          ((window as any).ethereum?.isImToken ? (window as any).ethereum : null);
+        if (!targetProvider) {
+          window.open('https://token.im/download', '_blank');
+          setIsWalletModalOpen(false);
+          return;
+        }
+        break;
+
+      case 'mathwallet':
+        targetProvider =
+          (window as any).mathwallet ||
+          providers.find((p: any) => p.isMathWallet) ||
+          ((window as any).ethereum?.isMathWallet ? (window as any).ethereum : null);
+        if (!targetProvider) {
+          window.open('https://mathwallet.org/', '_blank');
+          setIsWalletModalOpen(false);
+          return;
+        }
+        break;
+
+      case 'exodus':
+        targetProvider =
+          (window as any).exodus?.ethereum ||
+          (window as any).ethereum;
+        if (!targetProvider) {
+          window.open('https://www.exodus.com/download/', '_blank');
+          setIsWalletModalOpen(false);
+          return;
+        }
+        break;
+
+      default:
+        targetProvider = (window as any).ethereum;
+        if (!targetProvider) {
+          if (isMobile) {
+            window.open(`https://metamask.app.link/dapp/${domain}${pathname}`, '_blank');
+          } else {
+            window.open('https://metamask.io/download/', '_blank');
+          }
+          setIsWalletModalOpen(false);
+          return;
+        }
+        break;
     }
 
     try {

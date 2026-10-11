@@ -186,6 +186,32 @@ body {
   animation: pulseGlow 4s ease-in-out infinite;
 }
 
+/* 🪐 3D Spinning Logo Animation (Y-Axis Continuous 3D Round Rotation) */
+@keyframes spin3D {
+  0% {
+    transform: perspective(800px) rotateY(0deg) rotateX(2deg);
+  }
+  50% {
+    transform: perspective(800px) rotateY(180deg) rotateX(-2deg);
+  }
+  100% {
+    transform: perspective(800px) rotateY(360deg) rotateX(2deg);
+  }
+}
+
+.animate-spin-3d {
+  transform-style: preserve-3d;
+  animation: spin3D 7s linear infinite;
+  filter: drop-shadow(0 6px 14px rgba(245, 158, 11, 0.35));
+  transition: filter 0.3s ease;
+}
+
+.animate-spin-3d:hover {
+  animation-play-state: paused;
+  filter: drop-shadow(0 10px 25px rgba(245, 158, 11, 0.6));
+}
+
+
 /* ⚡ Electrical String Pulse Bar for Header */
 .electrical-header-string {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 253, 246, 0.98) 100%);

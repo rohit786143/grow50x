@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { CONTRACT_ADDRESSES, MOCK_USDT_ABI, BSC_CHAIN_ID, isAdminWallet, getAdminIndex, ensureBscChain } from '../config/contracts';
 import { useWeb3 } from '../context/Web3Context';
-import WalletModal from './WalletModal';
 import { UsdtIcon, BnbIcon } from './CryptoIcons';
 
 export default function WalletConnect() {

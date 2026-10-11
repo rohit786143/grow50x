@@ -1,8 +1,9 @@
 # SHARE POOL & NON-RESETTING CUMULATIVE CAP
 
-## 10-Day Periodic Accumulation
+## 10-Day Periodic Accumulation & Fixed Closing Schedule
 - 30% of every $100 entry fee ($30 USDT) is accumulated into `sharePoolBalance`.
-- Distribution occurs every 10 days ($864,000$ seconds).
+- **Closing Dates**: Distribution closes on the **3rd, 13th, and 23rd** of every month at **23:59:59 GST (Dubai Time, UTC+4)**.
+- **Timezone Note**: Closing strictly follows Dubai Time (GST = UTC+4), NOT Indian Standard Time (IST = UTC+5:30). When Dubai reaches 23:59:59, Indian time is 01:29:59 AM next morning.
 
 ## Scaled Integer Distribution Formula
 $$\Delta \text{Accumulator} = \frac{\text{Pool Balance} \times 10^{18}}{\sum \text{Eligible Active Shares}}$$

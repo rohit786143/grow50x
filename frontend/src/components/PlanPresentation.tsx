@@ -46,7 +46,7 @@ export default function PlanPresentation({ onConnectWallet, title, subtitle }: P
               <img
                 src="/logo.png"
                 alt="GROW 50X Official Logo"
-                style={{ maxHeight: '60px', maxWidth: '240px', width: 'auto', height: 'auto', objectFit: 'contain' }}
+                style={{ maxHeight: '64px', maxWidth: '250px', width: 'auto', height: 'auto', objectFit: 'contain' }}
                 className="h-12 sm:h-14 lg:h-16 w-auto hover:scale-105 transition-transform drop-shadow-sm"
               />
             </div>
@@ -112,7 +112,7 @@ export default function PlanPresentation({ onConnectWallet, title, subtitle }: P
           <div className="glass-card-gold-circuit p-6 rounded-2xl shadow-md hover:shadow-lg border border-slate-200/80 border-solid border-l-[6px] border-l-[#10b981] transition-all">
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">10-DAY SHARE POOL</span>
             <p className="text-4xl font-black text-[#10b981] mt-2">30% <span className="text-xs font-semibold text-slate-400">($30)</span></p>
-            <p className="text-xs text-slate-600 mt-2 font-medium leading-relaxed">Periodic pool auto-distributed on 9th, 19th, and 29th of every month.</p>
+            <p className="text-xs text-slate-600 mt-2 font-medium leading-relaxed">Periodic pool auto-distributed on 3rd, 13th, and 23rd of every month (Dubai Time GST UTC+4).</p>
           </div>
 
           {/* Card 3: Reserve Bucket */}

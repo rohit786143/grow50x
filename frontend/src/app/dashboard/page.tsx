@@ -8,26 +8,36 @@ import PlanPresentation from '../../components/PlanPresentation';
 import { useWeb3 } from '../../context/Web3Context';
 
 
-// Helper function to calculate exact next calendar cutoff date (9th, 19th, or 29th of the month)
+// Helper function to calculate exact next calendar cutoff date (3rd, 13th, or 23rd of the month according to Dubai GST UTC+4)
 function getNextSharePoolCutoff(fromDate: Date = new Date()): Date {
-  const year = fromDate.getUTCFullYear();
-  const month = fromDate.getUTCMonth(); // 0-indexed (0 = Jan, 1 = Feb, etc.)
-  const day = fromDate.getUTCDate();
+  const DUBAI_OFFSET_MS = 4 * 60 * 60 * 1000;
+  const nowMs = fromDate.getTime();
+  const dubaiDate = new Date(nowMs + DUBAI_OFFSET_MS);
 
-  if (day < 9) {
-    return new Date(Date.UTC(year, month, 9, 0, 0, 0));
-  } else if (day < 19) {
-    return new Date(Date.UTC(year, month, 19, 0, 0, 0));
-  } else if (day < 29) {
-    const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
-    if (daysInMonth >= 29) {
-      return new Date(Date.UTC(year, month, 29, 0, 0, 0));
-    } else {
-      return new Date(Date.UTC(year, month + 1, 1, 0, 0, 0));
-    }
-  } else {
-    return new Date(Date.UTC(year, month + 1, 9, 0, 0, 0));
+  const year = dubaiDate.getUTCFullYear();
+  const month = dubaiDate.getUTCMonth(); // 0-indexed (0 = Jan, 1 = Feb, etc.)
+
+  // Check 3rd, 13th, 23rd cutoffs at 23:59:59.999 Dubai time (GST)
+  const cutoff3UtcMs = Date.UTC(year, month, 3, 23, 59, 59, 999) - DUBAI_OFFSET_MS;
+  if (nowMs < cutoff3UtcMs) {
+    return new Date(cutoff3UtcMs);
   }
+
+  const cutoff13UtcMs = Date.UTC(year, month, 13, 23, 59, 59, 999) - DUBAI_OFFSET_MS;
+  if (nowMs < cutoff13UtcMs) {
+    return new Date(cutoff13UtcMs);
+  }
+
+  const cutoff23UtcMs = Date.UTC(year, month, 23, 23, 59, 59, 999) - DUBAI_OFFSET_MS;
+  if (nowMs < cutoff23UtcMs) {
+    return new Date(cutoff23UtcMs);
+  }
+
+  // After 23rd, next cutoff is 3rd of the following month
+  const nextMonth = month === 11 ? 0 : month + 1;
+  const nextYear = month === 11 ? year + 1 : year;
+  const cutoffNext3UtcMs = Date.UTC(nextYear, nextMonth, 3, 23, 59, 59, 999) - DUBAI_OFFSET_MS;
+  return new Date(cutoffNext3UtcMs);
 }
 
 export default function DashboardPage() {
@@ -729,10 +739,10 @@ function DashboardContent() {
       {/* 📘 10-DAY SHARE POOL RULES EXPLANATION BOX */}
       <div className="bg-amber-50/80 border border-amber-200 rounded-2xl p-4 sm:p-6 space-y-3">
         <h3 className="text-xs sm:text-sm font-bold text-amber-900 flex items-center gap-2">
-          <span>📅</span> Fixed Calendar Dates Share Pool Distribution Rules (9th, 19th & 29th)
+          <span>📅</span> Fixed Calendar Dates Share Pool Distribution Rules (3rd, 13th & 23rd - Dubai Time)
         </h3>
         <ul className="text-xs text-amber-950 space-y-1.5 list-disc list-inside">
-          <li><strong>Fixed Distribution Dates:</strong> Distribution DOES NOT start from user registration date. It takes place on fixed calendar dates: <strong>9th, 19th, and 29th</strong> of every month (or 1st of next month if a month like February has fewer than 29 days).</li>
+          <li><strong>Fixed Distribution Dates:</strong> Distribution DOES NOT start from user registration date. It takes place on fixed calendar dates: <strong>3rd, 13th, and 23rd</strong> of every month at 23:59:59 GST (Dubai Time UTC+4).</li>
           <li><strong>Accumulation:</strong> Every new $100 package registration or Sub-ID creation automatically adds <strong>$30 USDT</strong> to the Share Pool.</li>
           <li><strong>Proportional Shares:</strong> Distribution is divided based on your active Board Level share multiplier (Board 1 = 1x, Board 2 = 2x, Board 3 = 3x, Board 4 = 4x, Board 5 = 5x).</li>
           <li><strong>How to Claim:</strong> On the cutoff date (or anytime after finalization), click <strong>&quot;💰 Claim Share Income&quot;</strong> on your dashboard to receive your payouts directly into your connected Web3 USDT wallet.</li>

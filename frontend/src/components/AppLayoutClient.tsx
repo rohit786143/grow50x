@@ -47,7 +47,7 @@ export default function AppLayoutClient({ children }: { children: React.ReactNod
               <img
                 src="/logo.png"
                 alt="GROW 50X Official Logo"
-                style={{ maxHeight: '36px', maxWidth: '140px', width: 'auto', height: 'auto', objectFit: 'contain' }}
+                style={{ maxHeight: '38px', maxWidth: '140px', width: 'auto', height: 'auto', objectFit: 'contain' }}
                 className="h-8 sm:h-11 w-auto hover:scale-105 transition-transform"
               />
             </Link>
