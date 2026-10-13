@@ -489,11 +489,11 @@ function AdminAnalyticsContent() {
   ];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 w-full max-w-full overflow-hidden">
       {/* Admin Top Header Banner - Bright Blue/Green Gradient */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-sky-600 via-blue-600 to-emerald-600 text-white p-6 sm:p-7 rounded-3xl shadow-lg shadow-sky-500/15">
-        <div>
-          <div className="flex items-center gap-2">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-sky-600 via-blue-600 to-emerald-600 text-white p-5 sm:p-7 rounded-3xl shadow-lg shadow-sky-500/15 overflow-hidden">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="px-3 py-0.5 rounded-full text-[10px] font-black uppercase bg-white/20 text-white border border-white/30 backdrop-blur-sm">
               Protocol Telemetry & Admin Console
             </span>
@@ -501,7 +501,7 @@ function AdminAnalyticsContent() {
               {rpcConnected ? '● Live RPC Connected' : '○ RPC Syncing...'}
             </span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black mt-2 tracking-tight text-white">GROW 50X Smart Contract Control Panel</h1>
+          <h1 className="text-xl sm:text-3xl font-black mt-2 tracking-tight text-white break-words">GROW 50X Smart Contract Control Panel</h1>
           <p className="text-xs text-sky-100/90 mt-1 font-medium">
             Real-time live read-only financial accounting, board matrix queue, user directory, and reserve balances.
           </p>
@@ -509,7 +509,7 @@ function AdminAnalyticsContent() {
 
         <button
           onClick={fetchProtocolState}
-          className="self-start md:self-auto px-4 py-2.5 bg-white/20 hover:bg-white/30 border border-white/40 text-xs font-black rounded-2xl transition-all flex items-center gap-2 text-white shadow-sm whitespace-nowrap hover:scale-105"
+          className="self-start md:self-auto px-4 py-2.5 bg-white/20 hover:bg-white/30 border border-white/40 text-xs font-black rounded-2xl transition-all flex items-center gap-2 text-white shadow-sm whitespace-nowrap hover:scale-105 shrink-0"
         >
           <span>🔄</span> {loading ? 'Syncing...' : 'Refresh Live Telemetry'}
         </button>
@@ -517,24 +517,28 @@ function AdminAnalyticsContent() {
 
       {/* 👑 OFFICIAL 3-ADMIN REVENUE & TELEMETRY CONTROL CENTER */}
       {adminIdx > 0 ? (
-        <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white p-6 sm:p-8 rounded-3xl border border-sky-500/30 shadow-2xl space-y-6">
+        <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white p-5 sm:p-8 rounded-3xl border border-sky-500/30 shadow-2xl space-y-6 overflow-hidden max-w-full">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-700/80 pb-5">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-400/40 text-amber-400 flex items-center justify-center text-2xl font-bold shadow-inner">
+            <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 shrink-0 rounded-2xl bg-amber-500/20 border border-amber-400/40 text-amber-400 flex items-center justify-center text-xl sm:text-2xl font-bold shadow-inner">
                 👑
               </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-black text-amber-400 uppercase tracking-widest">Official Admin Wallet Connected</span>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                  <span className="text-xs sm:text-sm font-black text-amber-400 uppercase tracking-wide sm:tracking-widest">
+                    Official Admin Wallet Connected
+                  </span>
+                  <span className="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
                     Admin #{adminIdx}
                   </span>
                 </div>
-                <p className="text-xs font-mono text-slate-300 mt-0.5">{account}</p>
+                <p className="text-[11px] sm:text-xs font-mono text-slate-300 mt-1 break-all select-all">
+                  {account}
+                </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0 self-start md:self-auto">
               <span className="text-xs text-slate-400 font-medium">Role:</span>
               <span className="px-3 py-1 rounded-xl text-xs font-bold bg-sky-500/20 text-sky-300 border border-sky-500/30">
                 Protocol Owner (Admin #{adminIdx})

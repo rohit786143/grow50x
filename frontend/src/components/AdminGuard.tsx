@@ -144,28 +144,7 @@ export default function AdminGuard({ children }: AdminGuardProps) {
 
   // Case 3: Fully Authenticated -> Render Admin Console
   if (isAuthenticated && account && isAdminWallet(account)) {
-    const adminIdx = getAdminIndex(account);
-    return (
-      <div>
-        {/* Top Admin Security Status Banner */}
-        <div className="bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 text-slate-950 font-bold px-4 py-2 flex flex-wrap items-center justify-between text-xs shadow-md gap-2">
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-slate-950 animate-pulse" />
-            <span className="font-extrabold uppercase tracking-wider">👑 ADMIN CONSOLE AUTHORIZED</span>
-            <span className="opacity-40">|</span>
-            <span className="font-mono text-xs">Admin #{adminIdx} ({account.substring(0, 6)}...{account.substring(account.length - 4)})</span>
-          </div>
-
-          <button
-            onClick={handleLogout}
-            className="bg-slate-950 hover:bg-slate-900 text-amber-400 font-extrabold px-3 py-1 rounded-lg text-xs transition-all flex items-center gap-1.5 shadow-sm"
-          >
-            <span>🔒</span> Logout Admin
-          </button>
-        </div>
-        {children}
-      </div>
-    );
+    return <>{children}</>;
   }
 
   // Render Light Glassmorphism Login Gate Screen (Step 1 or Step 2)
