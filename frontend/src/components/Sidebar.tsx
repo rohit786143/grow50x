@@ -406,7 +406,7 @@ function SidebarInner({ isMobileOpen, onCloseMobile }: SidebarProps) {
           <div className="relative w-72 max-w-[80vw] bg-white h-full shadow-2xl overflow-y-auto flex flex-col z-10 animate-in slide-in-from-left duration-300">
             <div className="flex items-center justify-between p-4 border-b border-slate-200 bg-slate-50">
               <div className="flex items-center gap-2">
-                <img src="/logo.png" alt="Logo" className="h-7 w-auto" />
+                <img src="/logo-v2.png?v=2" alt="Logo" className="h-7 w-auto" />
                 <span className="font-extrabold text-sm text-slate-900">Menu</span>
               </div>
               <button

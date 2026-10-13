@@ -44,7 +44,7 @@ export default function PlanPresentation({ onConnectWallet, title, subtitle }: P
           <div className="flex justify-center">
             <div className="relative p-0.5 flex items-center justify-center">
               <img
-                src="/logo.png"
+                src="/logo-v2.png?v=2"
                 alt="GROW 50X Official Logo"
                 style={{ maxHeight: '64px', maxWidth: '250px', width: 'auto', height: 'auto', objectFit: 'contain' }}
                 className="h-12 sm:h-14 lg:h-16 w-auto hover:scale-105 transition-transform drop-shadow-sm"
