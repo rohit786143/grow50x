@@ -3,7 +3,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { ethers } from 'ethers';
-import { CONTRACT_ADDRESSES, GROW50X_CORE_ABI } from '../../config/contracts';
+import { CONTRACT_ADDRESSES, GROW50X_CORE_ABI, BSC_EXPLORER_URL } from '../../config/contracts';
 import { useWeb3 } from '../../context/Web3Context';
 
 interface ClaimHistoryRecord {
@@ -232,7 +232,7 @@ function ClaimedIncomeContent() {
                       </div>
                       {rec.txHash && (
                         <a
-                          href={`https://testnet.bscscan.com/tx/${rec.txHash}`}
+                          href={`${BSC_EXPLORER_URL}/tx/${rec.txHash}`}
                           target="_blank"
                           rel="noreferrer"
                           className="text-[10px] font-mono text-sky-600 hover:underline block mt-0.5"

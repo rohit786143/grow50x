@@ -33,16 +33,16 @@ export default function PlanPresentation({ onConnectWallet, title, subtitle }: P
   };
 
   return (
-    <div className="space-y-10 max-w-6xl mx-auto py-2 sm:py-3">
+    <div className="space-y-8 sm:space-y-10 max-w-6xl mx-auto pt-0 pb-6 sm:pb-8">
       {/* 🚀 Hero Section */}
-      <section className="relative py-2 sm:py-4 lg:py-6 text-center">
+      <section className="relative pt-0 sm:pt-1 pb-2 sm:pb-4 text-center">
         {/* Floating Ambient Gold Backdrop Orbs */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-amber-300/20 rounded-full blur-3xl animate-pulse-glow pointer-events-none" />
 
         {/* Hero Content */}
-        <div className="relative z-10 max-w-4xl mx-auto space-y-3 sm:space-y-3.5">
+        <div className="relative z-10 max-w-4xl mx-auto space-y-2.5 sm:space-y-3">
           <div className="flex justify-center">
-            <div className="relative p-1 flex items-center justify-center">
+            <div className="relative p-0.5 flex items-center justify-center">
               <img
                 src="/logo.png"
                 alt="GROW 50X Official Logo"

@@ -4,7 +4,7 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ethers } from 'ethers';
-import { CONTRACT_ADDRESSES, MOCK_USDT_ABI, GROW50X_CORE_ABI, getAdminIndex } from '../../config/contracts';
+import { CONTRACT_ADDRESSES, MOCK_USDT_ABI, GROW50X_CORE_ABI, getAdminIndex, BSC_EXPLORER_URL } from '../../config/contracts';
 import { useWeb3 } from '../../context/Web3Context';
 import AdminGuard from '../../components/AdminGuard';
 
@@ -128,7 +128,7 @@ function AdminAnalyticsContent() {
   const fetchProtocolState = async () => {
     setLoading(true);
     try {
-      const rpcUrl = process.env.NEXT_PUBLIC_RPC_URL || 'https://data-seed-prebsc-1-s1.binance.org:8545/';
+      const rpcUrl = process.env.NEXT_PUBLIC_RPC_URL || 'https://bsc-dataseed.binance.org/';
       const provider = new ethers.JsonRpcProvider(rpcUrl);
 
       const network = await provider.getNetwork();
@@ -873,7 +873,7 @@ function AdminAnalyticsContent() {
                         </td>
                         <td className="p-3 font-mono text-slate-600">
                           <a
-                            href={`https://testnet.bscscan.com/address/${u.wallet}`}
+                            href={`${BSC_EXPLORER_URL}/address/${u.wallet}`}
                             target="_blank"
                             rel="noreferrer"
                             className="hover:text-sky-600 hover:underline"
@@ -1207,7 +1207,7 @@ function AdminAnalyticsContent() {
           <div>
             <h2 className="text-2xl font-black text-slate-900">Smart Contracts & On-Chain Audit Invariants</h2>
             <p className="text-xs text-slate-500 mt-1">
-              Verify deployed contract addresses on BNB Smart Chain Testnet and inspect immutable security invariants.
+              Verify deployed contract addresses on BNB Smart Chain Mainnet and inspect immutable security invariants.
             </p>
           </div>
 
@@ -1221,7 +1221,7 @@ function AdminAnalyticsContent() {
                 {CONTRACT_ADDRESSES.GROW50X_CORE}
               </p>
               <a
-                href={`https://testnet.bscscan.com/address/${CONTRACT_ADDRESSES.GROW50X_CORE}`}
+                href={`${BSC_EXPLORER_URL}/address/${CONTRACT_ADDRESSES.GROW50X_CORE}`}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-2 text-xs font-bold text-sky-600 hover:underline"
@@ -1239,7 +1239,7 @@ function AdminAnalyticsContent() {
                 {CONTRACT_ADDRESSES.USDT}
               </p>
               <a
-                href={`https://testnet.bscscan.com/address/${CONTRACT_ADDRESSES.USDT}`}
+                href={`${BSC_EXPLORER_URL}/address/${CONTRACT_ADDRESSES.USDT}`}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-2 text-xs font-bold text-sky-600 hover:underline"

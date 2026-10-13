@@ -8,7 +8,7 @@ const app = express();
 app.use(express.json());
 
 const RPC_URL = process.env.RPC_URL || "https://bsc-dataseed.binance.org/";
-const CORE_CONTRACT_ADDRESS = process.env.CORE_CONTRACT_ADDRESS || "0x0000000000000000000000000000000000000000";
+const CORE_CONTRACT_ADDRESS = process.env.CORE_CONTRACT_ADDRESS || "0x36A3CC0b858F8747498031Ab91a82F82BB6A3905";
 
 const POLLING_INTERVAL_MS = 15000; // 15 Seconds periodic fallback scan
 

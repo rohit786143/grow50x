@@ -2,6 +2,10 @@ export const BSC_CHAIN_ID = Number(process.env.NEXT_PUBLIC_CHAIN_ID) || 56;
 export const BSC_TESTNET_CHAIN_ID = 97;
 export const BSC_MAINNET_CHAIN_ID = 56;
 
+export const BSC_EXPLORER_URL = (Number(process.env.NEXT_PUBLIC_CHAIN_ID) || 56) === 56 
+  ? 'https://bscscan.com' 
+  : 'https://testnet.bscscan.com';
+
 export const CONTRACT_ADDRESSES = {
   USDT: process.env.NEXT_PUBLIC_USDT_ADDRESS || "0x55d398326f99059fF775485246999027B3197955",
   GROW50X_CORE: process.env.NEXT_PUBLIC_CORE_ADDRESS || "0x36A3CC0b858F8747498031Ab91a82F82BB6A3905",

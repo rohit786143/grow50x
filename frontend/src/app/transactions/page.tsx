@@ -3,7 +3,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { ethers } from 'ethers';
-import { CONTRACT_ADDRESSES, GROW50X_CORE_ABI } from '../../config/contracts';
+import { CONTRACT_ADDRESSES, GROW50X_CORE_ABI, BSC_EXPLORER_URL } from '../../config/contracts';
 import { useWeb3 } from '../../context/Web3Context';
 
 interface IncomeTransactionItem {
@@ -451,7 +451,7 @@ function TransactionsContent() {
                     <span className="font-mono text-sky-400 break-all">{depositItem.txHash}</span>
                   </div>
                   <a
-                    href={`https://testnet.bscscan.com/tx/${depositItem.txHash}`}
+                    href={`${BSC_EXPLORER_URL}/tx/${depositItem.txHash}`}
                     target="_blank"
                     rel="noreferrer"
                     className="bg-sky-600 hover:bg-sky-500 text-white px-3 py-1.5 rounded-lg font-bold text-[11px] shrink-0 text-center transition-colors"
