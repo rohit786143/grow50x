@@ -2,7 +2,7 @@
 
 ## 10-Day Periodic Accumulation & Fixed Closing Schedule
 - 30% of every $100 entry fee ($30 USDT) is accumulated into `sharePoolBalance`.
-- **Closing Dates**: Distribution closes on the **3rd, 13th, and 23rd** of every month at **23:59:59 GST (Dubai Time, UTC+4)**.
+- **Closing Dates**: Distribution closes on the **5th, 15th, and 25th** of every month at **23:59:59 GST (Dubai Time, UTC+4)**.
 - **Timezone Note**: Closing strictly follows Dubai Time (GST = UTC+4), NOT Indian Standard Time (IST = UTC+5:30). When Dubai reaches 23:59:59, Indian time is 01:29:59 AM next morning.
 
 ## Scaled Integer Distribution Formula

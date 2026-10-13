@@ -112,7 +112,7 @@ export default function PlanPresentation({ onConnectWallet, title, subtitle }: P
           <div className="glass-card-gold-circuit p-6 rounded-2xl shadow-md hover:shadow-lg border border-slate-200/80 border-solid border-l-[6px] border-l-[#10b981] transition-all">
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">10-DAY SHARE POOL</span>
             <p className="text-4xl font-black text-[#10b981] mt-2">30% <span className="text-xs font-semibold text-slate-400">($30)</span></p>
-            <p className="text-xs text-slate-600 mt-2 font-medium leading-relaxed">Periodic pool auto-distributed on 3rd, 13th, and 23rd of every month (Dubai Time GST UTC+4).</p>
+            <p className="text-xs text-slate-600 mt-2 font-medium leading-relaxed">Periodic pool auto-distributed on 5th, 15th, and 25th of every month (Dubai Time GST UTC+4).</p>
           </div>
 
           {/* Card 3: Reserve Bucket */}
