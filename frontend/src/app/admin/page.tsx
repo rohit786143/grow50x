@@ -286,7 +286,7 @@ function AdminAnalyticsContent() {
   const discoverAndLoadBoardUnits = async (boardLevel: number, preferredUnitId?: number | null, targetUserId?: number | null) => {
     setBoardDetailsLoading(true);
     try {
-      const rpcUrl = process.env.NEXT_PUBLIC_RPC_URL || 'https://data-seed-prebsc-1-s1.binance.org:8545/';
+      const rpcUrl = process.env.NEXT_PUBLIC_RPC_URL || 'https://bsc-dataseed.binance.org/';
       const provider = new ethers.JsonRpcProvider(rpcUrl);
       const coreAddress = CONTRACT_ADDRESSES.GROW50X_CORE;
       if (!coreAddress || coreAddress === '0x0000000000000000000000000000000000000000') return;
@@ -453,7 +453,7 @@ function AdminAnalyticsContent() {
     setTargetBoardUnitId(unitId);
     setBoardDetailsLoading(true);
     try {
-      const rpcUrl = process.env.NEXT_PUBLIC_RPC_URL || 'https://data-seed-prebsc-1-s1.binance.org:8545/';
+      const rpcUrl = process.env.NEXT_PUBLIC_RPC_URL || 'https://bsc-dataseed.binance.org/';
       const provider = new ethers.JsonRpcProvider(rpcUrl);
       const coreAddress = CONTRACT_ADDRESSES.GROW50X_CORE;
       if (coreAddress && coreAddress !== '0x0000000000000000000000000000000000000000') {

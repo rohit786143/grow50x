@@ -140,7 +140,7 @@ function DashboardContent() {
       if (typeof window !== 'undefined' && (window as any).ethereum) {
         provider = new ethers.BrowserProvider((window as any).ethereum);
       } else {
-        const rpcUrl = process.env.NEXT_PUBLIC_RPC_URL || 'https://data-seed-prebsc-1-s1.binance.org:8545/';
+        const rpcUrl = process.env.NEXT_PUBLIC_RPC_URL || 'https://bsc-dataseed.binance.org/';
         provider = new ethers.JsonRpcProvider(rpcUrl);
       }
       const coreContract = new ethers.Contract(CONTRACT_ADDRESSES.GROW50X_CORE, GROW50X_CORE_ABI, provider);
