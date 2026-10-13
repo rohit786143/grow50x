@@ -1807,7 +1807,7 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
             if (activeIds[i] == boardId) {
                 activeIds[i] = activeIds[activeIds.length - 1];
                 activeIds.pop();
-                break;
+                break;      
             }
         }
     }

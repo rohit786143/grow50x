@@ -746,8 +746,6 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
 
         userCompletedCycles[mainUserId].push(newCycleId);
 
-        _payBoardReward(topId, 5);
-
         emit CycleCompleted(newCycleId, topId, users[topId].wallet, block.timestamp);
     }
 
