@@ -133,7 +133,7 @@ export default function AdminGuard({ children }: AdminGuardProps) {
 
   if (checkingAuth) {
     return (
-      <div className="min-h-[80vh] bg-slate-50 flex items-center justify-center p-6">
+      <div className="min-h-[80vh] bg-transparent flex items-center justify-center p-6">
         <div className="flex items-center gap-3 text-emerald-700 font-bold text-sm bg-white p-4 rounded-2xl border border-slate-200 shadow-md">
           <span className="w-5 h-5 rounded-full border-2 border-emerald-600 border-t-transparent animate-spin" />
           Checking Admin Access Permissions...
@@ -149,12 +149,12 @@ export default function AdminGuard({ children }: AdminGuardProps) {
 
   // Render Light Glassmorphism Login Gate Screen (Step 1 or Step 2)
   return (
-    <div className="flex items-start justify-center pt-2 sm:pt-4 pb-8 p-4 bg-slate-50 relative overflow-hidden">
+    <div className="flex items-start justify-center pt-4 sm:pt-8 pb-12 p-4 bg-transparent relative">
       {/* Background Soft Color Glow Blobs matching website */}
       <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-emerald-400/15 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-10 right-10 w-[350px] h-[350px] bg-sky-400/15 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="w-full max-w-md bg-white/95 backdrop-blur-xl border border-slate-200/90 rounded-3xl p-6 sm:p-8 shadow-xl shadow-slate-200/60 relative z-10">
+      <div className="w-full max-w-md bg-white/95 backdrop-blur-xl border border-slate-200/90 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-slate-300/40 relative z-10">
         
         {/* Header Logo Badge & Title */}
         <div className="text-center mb-6">
