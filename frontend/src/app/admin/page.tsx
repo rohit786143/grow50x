@@ -60,6 +60,8 @@ function AdminAnalyticsContent() {
   const [adminTotalWithdrawn, setAdminTotalWithdrawn] = useState<string>('0.00');
   const [isClaimingAdmin, setIsClaimingAdmin] = useState<boolean>(false);
   const [claimAdminStatus, setClaimAdminStatus] = useState<string>('');
+  const [autoTransferDirectEnabled, setAutoTransferDirectEnabled] = useState<boolean>(true);
+  const [isTogglingAutoDirect, setIsTogglingAutoDirect] = useState<boolean>(false);
 
   useEffect(() => {
     const idx = getAdminIndex(account);
@@ -167,6 +169,13 @@ function AdminAnalyticsContent() {
           setReserveLevelIncome(parseFloat(ethers.formatUnits(levelIncomeRaw, 18)).toFixed(2));
         } catch (e) {}
 
+        try {
+          const autoDirect = await coreContract.autoTransferDirectEnabled();
+          setAutoTransferDirectEnabled(autoDirect);
+        } catch (e) {
+          console.warn('Could not fetch autoTransferDirectEnabled:', e);
+        }
+
         // Fetch Admin specific 5% telemetry if connected wallet is Admin 1, 2, or 3
         const currAdminIdx = adminIdx > 0 ? adminIdx : getAdminIndex(account);
         if (currAdminIdx > 0) {
@@ -259,7 +268,7 @@ function AdminAnalyticsContent() {
       const coreContract = new ethers.Contract(CONTRACT_ADDRESSES.GROW50X_CORE, GROW50X_CORE_ABI, signer);
 
       const tx = await coreContract.withdrawAdminFees();
-      setClaimAdminStatus('⏳ Step 2/2: Finalizing Admin Share withdrawal on BSC Testnet blockchain...');
+      setClaimAdminStatus('⏳ Step 2/2: Finalizing Admin Share withdrawal on BNB Smart Chain (BSC) blockchain...');
       console.log('Withdraw Admin Fees TX:', tx.hash);
       await tx.wait(1);
 
@@ -273,6 +282,29 @@ function AdminAnalyticsContent() {
       setClaimAdminStatus(`❌ Withdrawal Error: ${msg}`);
     } finally {
       setIsClaimingAdmin(false);
+    }
+  };
+
+  const handleToggleAutoTransferDirect = async () => {
+    if (!account) {
+      alert('Please connect your official Admin Wallet in MetaMask!');
+      return;
+    }
+    setIsTogglingAutoDirect(true);
+    try {
+      const provider = new ethers.BrowserProvider((window as any).ethereum);
+      const signer = await provider.getSigner();
+      const coreContract = new ethers.Contract(CONTRACT_ADDRESSES.GROW50X_CORE, GROW50X_CORE_ABI, signer);
+      const newStatus = !autoTransferDirectEnabled;
+      const tx = await coreContract.setAutoTransferDirect(newStatus);
+      await tx.wait(1);
+      setAutoTransferDirectEnabled(newStatus);
+      alert(`🎉 Success! 40% Direct Income Auto-Transfer is now ${newStatus ? 'ENABLED (Instant Wallet Transfer)' : 'DISABLED (Users Claim via Dashboard)'}`);
+    } catch (err: any) {
+      console.error('Error toggling auto-transfer:', err);
+      alert(`Error toggling Auto-Transfer: ${err?.reason || err?.message || 'Transaction failed'}`);
+    } finally {
+      setIsTogglingAutoDirect(false);
     }
   };
 
@@ -1250,6 +1282,45 @@ function AdminAnalyticsContent() {
               >
                 <span>🔗</span> View USDT Token on BSCScan Explorer →
               </a>
+            </div>
+          </div>
+
+          {/* PROTOCOL CONTROLS: 40% DIRECT INCOME AUTO-TRANSFER */}
+          <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 p-6 rounded-3xl text-white shadow-xl border border-indigo-800/40">
+            <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-black text-white">40% Direct Income Auto-Transfer Control</h3>
+                  <span className={`px-2.5 py-0.5 text-xs font-extrabold rounded-full ${autoTransferDirectEnabled ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' : 'bg-amber-500/20 text-amber-400 border border-amber-500/40'}`}>
+                    {autoTransferDirectEnabled ? 'ACTIVE: Instant Wallet Payout' : 'DISABLED: Manual Claim Mode'}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400 mt-1 max-w-2xl">
+                  {autoTransferDirectEnabled
+                    ? 'When enabled, the 40% ($40 USDT) direct commission is instantly sent to the sponsor wallet during registration. If disabled, funds accumulate in the sponsor claim ledger.'
+                    : 'Auto-transfer is currently disabled. Sponsors accumulate direct commissions in their ledger and claim them via the dashboard.'}
+                </p>
+              </div>
+
+              {adminIdx > 0 && (
+                <button
+                  onClick={handleToggleAutoTransferDirect}
+                  disabled={isTogglingAutoDirect}
+                  className={`px-5 py-2.5 rounded-xl text-xs font-black transition-all shadow-lg flex items-center gap-2 shrink-0 ${
+                    autoTransferDirectEnabled
+                      ? 'bg-amber-600 hover:bg-amber-500 text-white shadow-amber-600/30'
+                      : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/30'
+                  } ${isTogglingAutoDirect ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  {isTogglingAutoDirect ? (
+                    <>⏳ Updating On-Chain...</>
+                  ) : autoTransferDirectEnabled ? (
+                    <>🔴 Disable Auto-Transfer (Switch to Claim)</>
+                  ) : (
+                    <>🟢 Enable Instant Auto-Transfer</>
+                  )}
+                </button>
+              )}
             </div>
           </div>
         </div>

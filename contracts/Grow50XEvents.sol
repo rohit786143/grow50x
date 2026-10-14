@@ -33,8 +33,11 @@ contract Grow50XEvents {
     event ShareIncomeCredited(uint256 indexed id, address indexed wallet, uint256 amount, uint256 newLifetimeShareIncome);
     
     event BoardRewardAccrued(uint256 indexed id, uint8 boardLevel, uint256 amount, uint256 timestamp);
+    event BoardRewardQueued(uint256 indexed userId, uint8 boardLevel, uint256 pendingAmount);
+    event BoardRewardSettled(uint256 indexed userId, uint256 settledAmount, uint256 remainingPending);
     event BoardRewardPaid(uint256 indexed id, address indexed wallet, uint8 boardLevel, uint256 amount);
     event BoardRewardClaimed(uint256 indexed id, address indexed wallet, uint256 amount);
+    event AutoTransferDirectToggled(bool enabled);
 
     event LevelIncomeAccrued(uint256 indexed beneficiaryMainUserId, uint256 indexed sourceId, uint8 level, uint256 amount, uint256 timestamp);
     event LevelIncomePaid(uint256 indexed beneficiaryMainUserId, address indexed wallet, uint256 sourceId, uint8 level, uint256 amount);

@@ -7,8 +7,8 @@ export const BSC_EXPLORER_URL = (Number(process.env.NEXT_PUBLIC_CHAIN_ID) || 56)
   : 'https://testnet.bscscan.com';
 
 export const CONTRACT_ADDRESSES = {
-  USDT: process.env.NEXT_PUBLIC_USDT_ADDRESS || "0x55d398326f99059fF775485246999027B3197955",
-  GROW50X_CORE: process.env.NEXT_PUBLIC_CORE_ADDRESS || "0x1F26B58AFBcf4a38Ee592038bBbFD16FBa94028C",
+  USDT: "0x55d398326f99059fF775485246999027B3197955",
+  GROW50X_CORE: "0xdcA6195e0ec335c1F6e683a059E17bF701C0a741",
 };
 
 export const MOCK_USDT_ABI = [
@@ -36,6 +36,8 @@ export const GROW50X_CORE_ABI = [
   "function userUnclaimedDirectIncome(uint256 id) external view returns (uint256)",
   "function userUnclaimedLevelIncome(uint256 id) external view returns (uint256)",
   "function userUnclaimedBoardRewards(uint256 id) external view returns (uint256)",
+  "function userUnclaimedShareIncome(uint256 id) external view returns (uint256)",
+  "function pendingBoardRewards(uint256 id) external view returns (uint256)",
   "function ownerSubIds(uint256 mainUserId, uint256 index) external view returns (uint256)",
   "function getOwnerSubIds(uint256 mainUserId) external view returns (uint256[])",
   "function getBoardUnitPositions(uint256 boardId) external view returns (uint256[7])",
@@ -46,7 +48,7 @@ export const GROW50X_CORE_ABI = [
   "function claimDirectIncome() external",
   "function claimLevelIncome() external",
   "function claimBoardRewards() external",
-  "function claimAllShareIncome() external",
+  "function claimAllShareIncome() external returns (uint256)",
   "function claimAllUserIncome() external",
   "function finalizeSharePeriod() external",
   "function sharePoolBalance() external view returns (uint256)",
@@ -58,6 +60,12 @@ export const GROW50X_CORE_ABI = [
   "function mainAdminUnclaimedFees() external view returns (uint256)",
   "function rewardVaultUnclaimedFees() external view returns (uint256)",
   "function serverMaintenanceUnclaimedFees() external view returns (uint256)",
+  "function autoTransferDirectEnabled() external view returns (bool)",
+  "function setAutoTransferDirect(bool enabled) external",
+  "function updateAdminWallets(address _mainAdmin, address _rewardVault, address _serverMaintenance) external",
+  "function emergencySweepInactivity() external",
+  "function lastActivityTimestamp() external view returns (uint256)",
+  "function owner() external view returns (address)",
   "function getAdminTelemetry(uint8 adminIndex) external view returns (address adminWallet, uint256 unclaimedFees, uint256 totalEarned, uint256 totalWithdrawn)",
   "function getUserUnclaimedSummary(uint256 mainUserId) external view returns (uint256 unclaimedDirect, uint256 unclaimedLevel, uint256 unclaimedBoardRewards, uint256 unclaimedShareIncome, uint256 totalUnclaimed)",
   "function getUserClaimHistory(uint256 mainUserId) external view returns (tuple(uint256 claimId, uint256 mainUserId, address wallet, uint256 totalAmount, uint256 directAmount, uint256 shareAmount, uint256 levelAmount, uint256 boardRewardAmount, uint256 timestamp)[])",
@@ -71,7 +79,15 @@ export const GROW50X_CORE_ABI = [
   "event BoardCompleted(uint256 indexed boardId, uint8 boardLevel, uint256 indexed topId)",
   "event AdminFeeAccrued(uint8 indexed adminIndex, address indexed adminWallet, uint256 amount, uint256 indexed fromUserId, uint256 timestamp)",
   "event AdminFeesWithdrawn(uint8 indexed adminIndex, address indexed adminWallet, uint256 amount, uint256 timestamp)",
-  "event AllUserIncomeClaimed(uint256 indexed mainUserId, address indexed wallet, uint256 directAmount, uint256 shareAmount, uint256 levelAmount, uint256 boardRewardAmount, uint256 totalClaimed, uint256 timestamp)"
+  "event AllUserIncomeClaimed(uint256 indexed mainUserId, address indexed wallet, uint256 directAmount, uint256 shareAmount, uint256 levelAmount, uint256 boardRewardAmount, uint256 totalClaimed, uint256 timestamp)",
+  "event AutoTransferDirectToggled(bool enabled)",
+  "event DirectCommissionPaid(uint256 indexed sponsorId, address indexed sponsorWallet, uint256 amount)",
+  "event DirectCommissionClaimed(uint256 indexed mainUserId, address indexed wallet, uint256 amount)",
+  "event LevelIncomeClaimed(uint256 indexed mainUserId, address indexed wallet, uint256 amount)",
+  "event BoardRewardClaimed(uint256 indexed mainUserId, address indexed wallet, uint256 amount)",
+  "event BoardRewardQueued(uint256 indexed userId, uint256 amount, uint256 timestamp)",
+  "event BoardRewardSettled(uint256 indexed userId, uint256 amount, uint256 timestamp)",
+  "event InactivitySweepTriggered(address indexed caller, uint256 amount, uint256 timestamp)"
 ] as const;
 
 export const ADMIN_WALLETS = [

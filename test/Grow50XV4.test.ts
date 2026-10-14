@@ -47,9 +47,9 @@ describe("GROW 50X V4 Comprehensive Verification Suite", function () {
       // Register Root User (userA, totalUserCount == 0, sponsorId = 0)
       await coreV4.connect(userA).registerMainUser(0, 0);
 
-      const admin1Unclaimed = await coreV4.admin1UnclaimedFees();
-      const admin2Unclaimed = await coreV4.admin2UnclaimedFees();
-      const admin3Unclaimed = await coreV4.admin3UnclaimedFees();
+      const admin1Unclaimed = await coreV4.mainAdminUnclaimedFees();
+      const admin2Unclaimed = await coreV4.rewardVaultUnclaimedFees();
+      const admin3Unclaimed = await coreV4.serverMaintenanceUnclaimedFees();
 
       // 5% Admin fee ($5) + 40 USDT split 3 ways (13.333333333333333333 USDT each)
       expect(admin1Unclaimed).to.be.closeTo(ethers.parseEther("18.333333333333333333"), ethers.parseEther("0.001"));

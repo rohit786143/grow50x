@@ -262,7 +262,7 @@ function DashboardContent() {
       const coreContract = new ethers.Contract(CONTRACT_ADDRESSES.GROW50X_CORE, GROW50X_CORE_ABI, signer);
 
       const tx = await coreContract.claimBoardRewards();
-      setActionMsg({ text: '⏳ Finalizing Board Reward Claim on BSC Testnet...', type: 'info' });
+      setActionMsg({ text: '⏳ Finalizing Board Reward Claim on BNB Smart Chain...', type: 'info' });
       await tx.wait(1);
 
       setActionMsg({ text: '🎉 Board Completion Rewards claimed successfully into your wallet!', type: 'success' });
@@ -288,7 +288,7 @@ function DashboardContent() {
       const coreContract = new ethers.Contract(CONTRACT_ADDRESSES.GROW50X_CORE, GROW50X_CORE_ABI, signer);
 
       const tx = await coreContract.claimLevelIncome();
-      setActionMsg({ text: '⏳ Finalizing Sub-ID Level Income Claim on BSC Testnet...', type: 'info' });
+      setActionMsg({ text: '⏳ Finalizing Sub-ID Level Income Claim on BNB Smart Chain...', type: 'info' });
       await tx.wait(1);
 
       setActionMsg({ text: '🎉 Sub-ID Level Income claimed successfully into your wallet!', type: 'success' });
@@ -314,7 +314,7 @@ function DashboardContent() {
       const coreContract = new ethers.Contract(CONTRACT_ADDRESSES.GROW50X_CORE, GROW50X_CORE_ABI, signer);
 
       const tx = await coreContract.claimDirectIncome();
-      setActionMsg({ text: '⏳ Finalizing Direct Sponsor Income Claim on BSC Testnet...', type: 'info' });
+      setActionMsg({ text: '⏳ Finalizing Direct Sponsor Income Claim on BNB Smart Chain...', type: 'info' });
       await tx.wait(1);
 
       setActionMsg({ text: '🎉 Direct Sponsor Income claimed successfully into your wallet!', type: 'success' });
@@ -340,7 +340,7 @@ function DashboardContent() {
       const coreContract = new ethers.Contract(CONTRACT_ADDRESSES.GROW50X_CORE, GROW50X_CORE_ABI, signer);
 
       const tx = await coreContract.claimAllUserIncome();
-      setActionMsg({ text: '⏳ Finalizing 1-Click All User Income Claim on BSC Testnet...', type: 'info' });
+      setActionMsg({ text: '⏳ Finalizing 1-Click All User Income Claim on BNB Smart Chain...', type: 'info' });
       await tx.wait(1);
 
       setActionMsg({ text: '🎉 All accumulated income successfully claimed into your wallet!', type: 'success' });

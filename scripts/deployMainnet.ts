@@ -75,7 +75,7 @@ async function main() {
       contractName: "Grow50XCoreV1_2",
       compilerVersion: "v0.8.24+commit.e11b9ed9",
       optimizationEnabled: true,
-      runs: 200,
+      runs: 1,
       evmVersion: "paris",
       constructorArgumentsABI: encodedArgs.slice(2),
     }
@@ -84,6 +84,18 @@ async function main() {
   const filePath = path.join(deploymentDir, "deployment-addresses-mainnet.json");
   fs.writeFileSync(filePath, JSON.stringify(deploymentData, null, 2));
   console.log(">>> Saved deployment details to:", filePath);
+
+  // Update .env file
+  const envPath = path.join(__dirname, "../.env");
+  if (fs.existsSync(envPath)) {
+    let envContent = fs.readFileSync(envPath, "utf8");
+    envContent = envContent.replace(
+      /NEXT_PUBLIC_CORE_ADDRESS=.*/,
+      `NEXT_PUBLIC_CORE_ADDRESS=${coreAddress}`
+    );
+    fs.writeFileSync(envPath, envContent);
+    console.log(">>> Updated .env NEXT_PUBLIC_CORE_ADDRESS to:", coreAddress);
+  }
 }
 
 main().catch((error) => {

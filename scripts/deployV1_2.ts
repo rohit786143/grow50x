@@ -65,7 +65,7 @@ async function main() {
       contractName: "Grow50XCoreV1_2",
       compilerVersion: "v0.8.24+commit.e11b9ed9",
       optimizationEnabled: true,
-      runs: 200,
+      runs: 1,
       evmVersion: "paris",
       constructorArgumentsABI: encodedArgs.slice(2),
     }

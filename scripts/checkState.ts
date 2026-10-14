@@ -1,8 +1,8 @@
 import { ethers } from "hardhat";
 
 async function main() {
-  const coreAddress = "0xb96D2426efDeE912C5FA7942b364a8c779F7FEa8";
-  const usdtAddress = "0x18C75ceD75F8DfA03f41Dc7f412737147519d6B7";
+  const coreAddress = "0xdcA6195e0ec335c1F6e683a059E17bF701C0a741";
+  const usdtAddress = "0x55d398326f99059fF775485246999027B3197955";
 
   const Core = await ethers.getContractFactory("Grow50XCore");
   const core = Core.attach(coreAddress) as any;

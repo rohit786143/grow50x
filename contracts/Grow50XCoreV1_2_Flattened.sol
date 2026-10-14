@@ -939,8 +939,11 @@ contract Grow50XEvents {
     event ShareIncomeCredited(uint256 indexed id, address indexed wallet, uint256 amount, uint256 newLifetimeShareIncome);
     
     event BoardRewardAccrued(uint256 indexed id, uint8 boardLevel, uint256 amount, uint256 timestamp);
+    event BoardRewardQueued(uint256 indexed userId, uint8 boardLevel, uint256 pendingAmount);
+    event BoardRewardSettled(uint256 indexed userId, uint256 settledAmount, uint256 remainingPending);
     event BoardRewardPaid(uint256 indexed id, address indexed wallet, uint8 boardLevel, uint256 amount);
     event BoardRewardClaimed(uint256 indexed id, address indexed wallet, uint256 amount);
+    event AutoTransferDirectToggled(bool enabled);
 
     event LevelIncomeAccrued(uint256 indexed beneficiaryMainUserId, uint256 indexed sourceId, uint8 level, uint256 amount, uint256 timestamp);
     event LevelIncomePaid(uint256 indexed beneficiaryMainUserId, address indexed wallet, uint256 sourceId, uint8 level, uint256 amount);
@@ -1141,6 +1144,14 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
     mapping(uint256 => uint256) public userUnclaimedDirectIncome;
     mapping(uint256 => uint256) public userUnclaimedLevelIncome;
     mapping(uint256 => uint256) public userUnclaimedBoardRewards;
+    mapping(uint256 => uint256) public userUnclaimedShareIncome; // Accrued frozen share dividends
+
+    // Pending Board Rewards waiting for reserve liquidity (No silent loss)
+    mapping(uint256 => uint256) public pendingBoardRewards;
+    mapping(uint256 => bool) public isSharePoolCompleted;
+
+    // Direct Commission Auto-Transfer Configuration (Default: Instant Transfer to wallet)
+    bool public autoTransferDirectEnabled = true;
 
     // Account Mappings
     mapping(uint256 => UserID) public users;                            // internalId => UserID
@@ -1247,6 +1258,7 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
 
         // Add 1 Share for Board 1
         totalActiveProtocolShares += SHARES_BOARD_1;
+        userLastAccumulator[newId] = accumulatedShareValueScaled;
 
         // Process revenue allocation to ledgers (Zero instant transfers -> Low Gas!)
         _distributeEntryFeeV1_2(sponsorId, newId);
@@ -1351,6 +1363,7 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
 
         // Add 1 Share for Board 1
         totalActiveProtocolShares += SHARES_BOARD_1;
+        userLastAccumulator[newSubId] = accumulatedShareValueScaled;
 
         users[sponsorId].directCount++;
         emit DirectCountUpdated(sponsorId, users[sponsorId].directCount);
@@ -1408,14 +1421,16 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
 
             emit RootDirectCommissionSplit(fromUserId, SPONSOR_FEE, splitThird);
         } else {
-            // Normal Sponsor -> 40% Direct Commission ($40 USDT) INSTANT AUTOMATIC TRANSFER to sponsor's wallet
+            // Normal Sponsor -> 40% Direct Commission ($40 USDT)
             userIncomes[sponsorId].directIncome += SPONSOR_FEE;
 
             address sponsorWallet = users[sponsorId].wallet;
-            if (sponsorWallet != address(0)) {
+            if (autoTransferDirectEnabled && sponsorWallet != address(0)) {
+                // Default: Instant auto-transfer to sponsor wallet
                 usdtToken.safeTransfer(sponsorWallet, SPONSOR_FEE);
                 emit DirectCommissionAccrued(sponsorId, fromUserId, SPONSOR_FEE, block.timestamp);
             } else {
+                // Emergency / Fallback mode: Accrues to unclaimed ledger for manual claim
                 userUnclaimedDirectIncome[sponsorId] += SPONSOR_FEE;
                 emit DirectCommissionAccrued(sponsorId, fromUserId, SPONSOR_FEE, block.timestamp);
             }
@@ -1492,15 +1507,15 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
     }
 
     function _validateManualPlacement(uint256 userId, uint256 manualPlacementId) internal view returns (uint256) {
-        require(manualPlacementId != 0 && users[manualPlacementId].active, "Invalid placement parent ID");
+        require(manualPlacementId != 0 && users[manualPlacementId].active, "Invalid parent ID");
         require(manualPlacementId != userId, "Cannot place under self");
 
         uint256 boardId = userActiveBoardUnit[manualPlacementId];
-        require(boardId != 0, "Placement parent has no active board");
+        require(boardId != 0, "No active board");
 
         BoardUnit memory b = boardUnits[boardId];
-        require(b.boardLevel == 1, "Manual placement only allowed in Board Level 1");
-        require(!b.completed && b.filledCount < 7, "Placement parent board is full or completed");
+        require(b.boardLevel == 1, "Only Board Level 1");
+        require(!b.completed && b.filledCount < 7, "Board full");
 
         uint8 parentSlot = 255;
         for (uint8 i = 0; i < 7; i++) {
@@ -1513,11 +1528,11 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
         require(parentSlot < 3, "Cannot use bottom board position (Pos 4-7) as placement parent");
 
         if (parentSlot == 0) {
-            require(b.positions[1] == 0 || b.positions[2] == 0, "Placement parent already has 2 direct placement children filled");
+            require(b.positions[1] == 0 || b.positions[2] == 0, "Parent slots full");
         } else if (parentSlot == 1) {
-            require(b.positions[3] == 0 || b.positions[4] == 0, "Placement parent already has 2 direct placement children filled");
+            require(b.positions[3] == 0 || b.positions[4] == 0, "Parent slots full");
         } else if (parentSlot == 2) {
-            require(b.positions[5] == 0 || b.positions[6] == 0, "Placement parent already has 2 direct placement children filled");
+            require(b.positions[5] == 0 || b.positions[6] == 0, "Parent slots full");
         }
 
         return boardId;
@@ -1527,17 +1542,18 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
         if (sponsorId != 0) {
             uint256 sponsorBoardId = userActiveBoardUnit[sponsorId];
             if (sponsorBoardId != 0) {
-                BoardUnit memory b = boardUnits[sponsorBoardId];
+                BoardUnit storage b = boardUnits[sponsorBoardId];
                 if (b.boardLevel == boardLevel && !b.completed && b.filledCount < 7) {
                     return sponsorBoardId;
                 }
             }
         }
 
-        uint256[] memory activeIds = activeBoardIdsByLevel[boardLevel];
-        for (uint256 i = 0; i < activeIds.length; i++) {
+        uint256[] storage activeIds = activeBoardIdsByLevel[boardLevel];
+        uint256 len = activeIds.length;
+        for (uint256 i = 0; i < len; i++) {
             uint256 bId = activeIds[i];
-            BoardUnit memory b = boardUnits[bId];
+            BoardUnit storage b = boardUnits[bId];
             if (!b.completed && b.filledCount < 7) {
                 return bId;
             }
@@ -1571,14 +1587,14 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
 
     function _insertIntoBoardUnit(uint256 boardId, uint256 userId, uint256 manualPlacementParentId) internal {
         BoardUnit storage b = boardUnits[boardId];
-        require(!b.completed && b.filledCount < 7, "Target board unit is full or completed");
+        require(!b.completed && b.filledCount < 7, "Board full");
 
         uint8 slotToFill = 255;
         uint256 parentId = 0;
 
         if (manualPlacementParentId != 0) {
             slotToFill = _findChildSlotOfParent(b, manualPlacementParentId);
-            require(slotToFill != 255, "Placement parent already has 2 direct placement children filled");
+            require(slotToFill != 255, "Parent slots full");
         } else {
             for (uint8 i = 0; i < 7; i++) {
                 uint8 slot = FILL_ORDER[i];
@@ -1589,7 +1605,7 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
             }
         }
 
-        require(slotToFill < 7, "No available position in board unit");
+        require(slotToFill < 7, "No slot available");
 
         b.positions[slotToFill] = userId;
         b.filledCount++;
@@ -1630,6 +1646,51 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
     // 3. BOARD COMPLETION, SPLIT & HOLD QUEUE
     // ==========================================
 
+    function _accruePendingShareIncome(uint256 userId) internal {
+        if (!users[userId].active || isSharePoolCompleted[userId]) return;
+
+        uint256 lastAcc = userLastAccumulator[userId];
+        if (accumulatedShareValueScaled > lastAcc) {
+            uint256 accDiff = accumulatedShareValueScaled - lastAcc;
+            uint8 bLevel = users[userId].currentBoard;
+            uint256 userShares = _getShareWeight(bLevel);
+
+            uint256 grossEarned = (accDiff * userShares) / 1e18;
+            if (grossEarned > 0) {
+                uint256 capLimit = getBoardCap(bLevel);
+                uint256 currentLifetimeEarned = userIncomes[userId].lifetimeShareIncomeEarned;
+
+                if (currentLifetimeEarned >= capLimit) {
+                    sharePoolBalance += grossEarned;
+                    if (bLevel == 5 && !isSharePoolCompleted[userId]) {
+                        isSharePoolCompleted[userId] = true;
+                        if (totalActiveProtocolShares >= userShares) {
+                            totalActiveProtocolShares -= userShares;
+                        }
+                    }
+                } else {
+                    uint256 netEarned = grossEarned;
+                    if (currentLifetimeEarned + grossEarned > capLimit) {
+                        netEarned = capLimit - currentLifetimeEarned;
+                        uint256 unclaimableExcess = grossEarned - netEarned;
+                        sharePoolBalance += unclaimableExcess;
+                    }
+
+                    userIncomes[userId].lifetimeShareIncomeEarned += netEarned;
+                    userUnclaimedShareIncome[userId] += netEarned;
+
+                    if (userIncomes[userId].lifetimeShareIncomeEarned >= CAP_BOARD_5 && !isSharePoolCompleted[userId]) {
+                        isSharePoolCompleted[userId] = true;
+                        if (totalActiveProtocolShares >= userShares) {
+                            totalActiveProtocolShares -= userShares;
+                        }
+                    }
+                }
+            }
+            userLastAccumulator[userId] = accumulatedShareValueScaled;
+        }
+    }
+
     function _processBoardCompletion(uint256 boardId) internal {
         BoardUnit storage b = boardUnits[boardId];
         b.completed = true;
@@ -1645,6 +1706,7 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
             _payBoardReward(topId, currentLevel);
 
             if (currentLevel < 5) {
+                _accruePendingShareIncome(topId);
                 uint8 nextLevel = currentLevel + 1;
                 users[topId].currentBoard = nextLevel;
 
@@ -1704,6 +1766,7 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
             _payBoardReward(userId, currentHoldLevel);
 
             if (targetLevel <= 5) {
+                _accruePendingShareIncome(userId);
                 users[userId].currentBoard = targetLevel;
                 _addShareDifferenceOnPromotion(currentHoldLevel, targetLevel);
 
@@ -1736,13 +1799,35 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
         else if (boardLevel == 4) rewardAmount = REWARD_BOARD_4;
         else if (boardLevel == 5) rewardAmount = REWARD_BOARD_5;
 
-        if (protocolReserveBalance >= rewardAmount) {
-            protocolReserveBalance -= rewardAmount;
-            userIncomes[userId].boardRewards += rewardAmount;
-            userUnclaimedBoardRewards[userId] += rewardAmount;
+        uint256 payableNow = protocolReserveBalance >= rewardAmount ? rewardAmount : protocolReserveBalance;
+        uint256 shortfall = rewardAmount - payableNow;
+
+        if (payableNow > 0) {
+            protocolReserveBalance -= payableNow;
+            userIncomes[userId].boardRewards += payableNow;
+            userUnclaimedBoardRewards[userId] += payableNow;
             
-            emit BoardRewardAccrued(userId, boardLevel, rewardAmount, block.timestamp);
-            emit ReserveUsed("BoardRewards", rewardAmount, protocolReserveBalance);
+            emit BoardRewardAccrued(userId, boardLevel, payableNow, block.timestamp);
+            emit ReserveUsed("BoardRewards", payableNow, protocolReserveBalance);
+        }
+
+        if (shortfall > 0) {
+            pendingBoardRewards[userId] += shortfall;
+            emit BoardRewardQueued(userId, boardLevel, shortfall);
+        }
+    }
+
+    function _settlePendingBoardReward(uint256 userId) internal {
+        uint256 pending = pendingBoardRewards[userId];
+        if (pending > 0 && protocolReserveBalance > 0) {
+            uint256 settleAmount = protocolReserveBalance >= pending ? pending : protocolReserveBalance;
+            protocolReserveBalance -= settleAmount;
+            pendingBoardRewards[userId] -= settleAmount;
+            userIncomes[userId].boardRewards += settleAmount;
+            userUnclaimedBoardRewards[userId] += settleAmount;
+
+            emit BoardRewardSettled(userId, settleAmount, pendingBoardRewards[userId]);
+            emit ReserveUsed("BoardRewardsSettled", settleAmount, protocolReserveBalance);
         }
     }
 
@@ -1807,7 +1892,7 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
             if (activeIds[i] == boardId) {
                 activeIds[i] = activeIds[activeIds.length - 1];
                 activeIds.pop();
-                break;      
+                break;
             }
         }
     }
@@ -1827,8 +1912,6 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
 
         userCompletedCycles[mainUserId].push(newCycleId);
 
-        _payBoardReward(topId, 5);
-
         emit CycleCompleted(newCycleId, topId, users[topId].wallet, block.timestamp);
     }
 
@@ -1846,25 +1929,23 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
         if (msg.sender == mainAdminWallet) {
             adminIdx = 1;
             amountToClaim = mainAdminUnclaimedFees;
-            require(amountToClaim > 0, "No unclaimed main admin fees available");
             mainAdminUnclaimedFees = 0;
             mainAdminTotalWithdrawn += amountToClaim;
         } else if (msg.sender == rewardVaultWallet) {
             adminIdx = 2;
             amountToClaim = rewardVaultUnclaimedFees;
-            require(amountToClaim > 0, "No unclaimed reward vault fees available");
             rewardVaultUnclaimedFees = 0;
             rewardVaultTotalWithdrawn += amountToClaim;
         } else if (msg.sender == serverMaintenanceWallet) {
             adminIdx = 3;
             amountToClaim = serverMaintenanceUnclaimedFees;
-            require(amountToClaim > 0, "No unclaimed server maintenance fees available");
             serverMaintenanceUnclaimedFees = 0;
             serverMaintenanceTotalWithdrawn += amountToClaim;
         } else {
-            revert("Unauthorized: Caller is not an official Admin or Vault wallet");
+            revert("Unauthorized");
         }
 
+        require(amountToClaim > 0, "No fees to claim");
         usdtToken.safeTransfer(msg.sender, amountToClaim);
         emit AdminFeesWithdrawn(adminIdx, msg.sender, amountToClaim, block.timestamp);
     }
@@ -1883,7 +1964,7 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
             totalClaimable += _claimDirectIncomeInternal(subIds[i]);
         }
 
-        require(totalClaimable > 0, "No direct commission available to claim");
+        require(totalClaimable > 0, "No direct income");
         usdtToken.safeTransfer(msg.sender, totalClaimable);
         emit DirectCommissionClaimed(mainUserId, msg.sender, totalClaimable);
     }
@@ -1910,7 +1991,7 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
             totalClaimable += _claimLevelIncomeInternal(subIds[i]);
         }
 
-        require(totalClaimable > 0, "No level income available to claim");
+        require(totalClaimable > 0, "No level income");
         usdtToken.safeTransfer(msg.sender, totalClaimable);
         emit LevelIncomeClaimed(mainUserId, msg.sender, totalClaimable);
     }
@@ -1930,14 +2011,16 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
         uint256 mainUserId = walletToMainUserId[msg.sender];
         require(mainUserId != 0, "Not registered");
 
+        _settlePendingBoardReward(mainUserId);
         uint256 totalClaimable = _claimBoardRewardInternal(mainUserId);
 
         uint256[] memory subIds = ownerSubIds[mainUserId];
         for (uint256 i = 0; i < subIds.length; i++) {
+            _settlePendingBoardReward(subIds[i]);
             totalClaimable += _claimBoardRewardInternal(subIds[i]);
         }
 
-        require(totalClaimable > 0, "No board rewards available to claim");
+        require(totalClaimable > 0, "No board rewards");
         usdtToken.safeTransfer(msg.sender, totalClaimable);
         emit BoardRewardClaimed(mainUserId, msg.sender, totalClaimable);
     }
@@ -1971,37 +2054,15 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
     }
 
     function _claimUserShareIncomeInternal(uint256 userId) internal returns (uint256) {
-        if (!users[userId].active) return 0;
+        _accruePendingShareIncome(userId);
 
-        uint256 lastAcc = userLastAccumulator[userId];
-        if (accumulatedShareValueScaled <= lastAcc) return 0;
-
-        uint256 accDiff = accumulatedShareValueScaled - lastAcc;
-        uint8 bLevel = users[userId].currentBoard;
-        uint256 userShares = _getShareWeight(bLevel);
-
-        uint256 grossEarned = (accDiff * userShares) / 1e18;
-        if (grossEarned == 0) return 0;
-
-        userLastAccumulator[userId] = accumulatedShareValueScaled;
-
-        uint256 capLimit = getBoardCap(bLevel);
-        uint256 currentLifetimeEarned = userIncomes[userId].lifetimeShareIncomeEarned;
-
-        if (currentLifetimeEarned >= capLimit) {
-            return 0;
+        uint256 claimable = userUnclaimedShareIncome[userId];
+        if (claimable > 0) {
+            userUnclaimedShareIncome[userId] = 0;
+            userIncomes[userId].shareIncome += claimable;
+            emit ShareIncomeCredited(userId, users[userId].wallet, claimable, userIncomes[userId].lifetimeShareIncomeEarned);
         }
-
-        uint256 netClaimable = grossEarned;
-        if (currentLifetimeEarned + grossEarned > capLimit) {
-            netClaimable = capLimit - currentLifetimeEarned;
-        }
-
-        userIncomes[userId].lifetimeShareIncomeEarned += netClaimable;
-        userIncomes[userId].shareIncome += netClaimable;
-
-        emit ShareIncomeCredited(userId, users[userId].wallet, netClaimable, userIncomes[userId].lifetimeShareIncomeEarned);
-        return netClaimable;
+        return claimable;
     }
 
     /**
@@ -2012,6 +2073,7 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
         uint256 mainUserId = walletToMainUserId[msg.sender];
         require(mainUserId != 0, "Not registered");
 
+        _settlePendingBoardReward(mainUserId);
         // 1. Direct Income
         uint256 directAmount = _claimDirectIncomeInternal(mainUserId);
         // 2. Level Income
@@ -2021,6 +2083,7 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
 
         uint256[] memory subIds = ownerSubIds[mainUserId];
         for (uint256 i = 0; i < subIds.length; i++) {
+            _settlePendingBoardReward(subIds[i]);
             directAmount += _claimDirectIncomeInternal(subIds[i]);
             levelAmount += _claimLevelIncomeInternal(subIds[i]);
             boardRewardAmount += _claimBoardRewardInternal(subIds[i]);
@@ -2033,7 +2096,7 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
         }
 
         uint256 totalClaimable = directAmount + levelAmount + boardRewardAmount + shareAmount;
-        require(totalClaimable > 0, "No accumulated income available to claim");
+        require(totalClaimable > 0, "No income to claim");
 
         claimRecordCounter++;
         userClaimHistory[mainUserId].push(ClaimRecord({
@@ -2112,15 +2175,6 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
         return _toTimestamp(nextYear, nextMonth, 5) + 23 hours + 59 minutes + 59 seconds - 4 hours;
     }
 
-    function _getLastDayOfMonth(uint256 year, uint256 month) internal pure returns (uint256 y, uint256 m, uint256 d) {
-        if (month == 2) {
-            bool isLeap = (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
-            return (year, month, isLeap ? 29 : 28);
-        }
-        if (month == 4 || month == 6 || month == 9 || month == 11) return (year, month, 30);
-        return (year, month, 31);
-    }
-
     function _timestampToDate(uint256 timestamp) internal pure returns (uint256 year, uint256 month, uint256 day) {
         int256 z = int256(timestamp / 86400) + 719468;
         int256 era = (z >= 0 ? z : z - 146096) / 146097;
@@ -2182,13 +2236,6 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
             }
         }
 
-        for (uint256 i = 0; i < subIds.length; i++) {
-            uint256 subId = subIds[i];
-            if (users[subId].directCount < 2) {
-                return subId;
-            }
-        }
-
         return mainUserId;
     }
 
@@ -2207,6 +2254,9 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
         }
 
         candidateId = 100000 + totalUserCount;
+        while (usedUserIds[candidateId]) {
+            candidateId++;
+        }
         usedUserIds[candidateId] = true;
         return candidateId;
     }
@@ -2259,26 +2309,28 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
     }
 
     function _getPendingShareIncomeView(uint256 userId) internal view returns (uint256) {
-        if (!users[userId].active) return 0;
+        uint256 total = userUnclaimedShareIncome[userId];
+        if (!users[userId].active || isSharePoolCompleted[userId]) return total;
+
         uint256 lastAcc = userLastAccumulator[userId];
-        if (accumulatedShareValueScaled <= lastAcc) return 0;
+        if (accumulatedShareValueScaled <= lastAcc) return total;
 
         uint256 accDiff = accumulatedShareValueScaled - lastAcc;
         uint8 bLevel = users[userId].currentBoard;
         uint256 userShares = _getShareWeight(bLevel);
 
         uint256 grossEarned = (accDiff * userShares) / 1e18;
-        if (grossEarned == 0) return 0;
+        if (grossEarned == 0) return total;
 
         uint256 capLimit = getBoardCap(bLevel);
         uint256 currentLifetimeEarned = userIncomes[userId].lifetimeShareIncomeEarned;
-        if (currentLifetimeEarned >= capLimit) return 0;
+        if (currentLifetimeEarned >= capLimit) return total;
 
         uint256 net = grossEarned;
         if (currentLifetimeEarned + grossEarned > capLimit) {
             net = capLimit - currentLifetimeEarned;
         }
-        return net;
+        return total + net;
     }
 
     function getBoardUnitPositions(uint256 boardId) external view returns (uint256[7] memory) {
@@ -2328,11 +2380,16 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
     }
 
     function updateAdminWallets(address _mainAdmin, address _rewardVault, address _serverMaintenance) external onlyOwner {
-        require(_mainAdmin != address(0) && _rewardVault != address(0) && _serverMaintenance != address(0), "Invalid admin address");
+        require(_mainAdmin != address(0) && _rewardVault != address(0) && _serverMaintenance != address(0), "Invalid admin");
         mainAdminWallet = _mainAdmin;
         rewardVaultWallet = _rewardVault;
         serverMaintenanceWallet = _serverMaintenance;
         emit AdminWalletsUpdated(_mainAdmin, _rewardVault, _serverMaintenance);
+    }
+
+    function setAutoTransferDirect(bool enabled) external onlyOwner {
+        autoTransferDirectEnabled = enabled;
+        emit AutoTransferDirectToggled(enabled);
     }
 
     /**
@@ -2344,11 +2401,11 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
     function emergencySweepInactivity() external nonReentrant {
         require(
             block.timestamp >= lastActivityTimestamp + 365 days,
-            "Inactivity period of 365 days has not elapsed yet"
+            "365 days not elapsed"
         );
 
         uint256 contractBalance = usdtToken.balanceOf(address(this));
-        require(contractBalance > 0, "No USDT balance available to sweep");
+        require(contractBalance > 0, "Zero balance");
 
         usdtToken.safeTransfer(mainAdminWallet, contractBalance);
 

@@ -8,7 +8,7 @@ export interface PlacementValidationResult {
 }
 
 /**
- * Real-time verification of Placement Parent ID eligibility on BSC Testnet smart contract.
+ * Real-time verification of Placement Parent ID eligibility on BNB Smart Chain (BSC) smart contract.
  * Checks:
  * 1. User existence & active status
  * 2. Active board unit existence
