@@ -102,4 +102,68 @@ describe("Sub-ID 3-2-1 External Eligible Level Income Rule Tests", function () {
     // 3rd External Qualified Upline (userA) MUST get $1 USDT (Level 3 = 1%)
     expect(lvlIncA_after - lvlIncA_before).to.equal(ethers.parseEther("1"));
   });
+
+  it("Unqualified upline (<2 directs) level income stays in Reserve and is NOT passed up", async function () {
+    // 1. Root Registration (owner)
+    await core.connect(owner).registerMainUser(0, 0);
+    const rootId = Number(await core.walletToMainUserId(owner.address));
+
+    // 2. Register userA under Root
+    await core.connect(userA).registerMainUser(rootId, 0);
+    const idA = Number(await core.walletToMainUserId(userA.address));
+
+    // 3. Register userB under userA (Give userB only 1 direct -> unqualified)
+    await core.connect(userB).registerMainUser(idA, 0);
+    const idB = Number(await core.walletToMainUserId(userB.address));
+
+    // 4. Register userC under userB
+    await core.connect(userC).registerMainUser(idB, 0);
+    const idC = Number(await core.walletToMainUserId(userC.address));
+
+    // Give userA 2 directs (userB + dummy1)
+    const dummy1 = (await ethers.getSigners())[8];
+    await usdt.mint(dummy1.address, ENTRY_FEE);
+    await usdt.connect(dummy1).approve(await core.getAddress(), ethers.MaxUint256);
+    await core.connect(dummy1).registerMainUser(idA, 0);
+
+    // Give userC 2 directs (dummy2 + dummy3)
+    const dummy2 = (await ethers.getSigners())[9];
+    const dummy3 = (await ethers.getSigners())[10];
+    await usdt.mint(dummy2.address, ENTRY_FEE);
+    await usdt.mint(dummy3.address, ENTRY_FEE);
+    await usdt.connect(dummy2).approve(await core.getAddress(), ethers.MaxUint256);
+    await usdt.connect(dummy3).approve(await core.getAddress(), ethers.MaxUint256);
+    await core.connect(dummy2).registerMainUser(idC, 0);
+    await core.connect(dummy3).registerMainUser(idC, 0);
+
+    // Now:
+    // userC has 2 directs (dummy2, dummy3)
+    // userB has 1 direct (userC) -> Unqualified (<2)
+    // userA has 2 directs (userB, dummy1) -> Qualified (>=2)
+
+    const reserveBefore = await core.protocolReserveBalance();
+    const lvlB_before = await core.userUnclaimedLevelIncome(idB);
+    const lvlA_before = await core.userUnclaimedLevelIncome(idA);
+
+    // userC creates 1 Sub-ID
+    // For this Sub-ID:
+    // Level 1: userB (Unqualified! directCount = 1) -> Must get $0!
+    // Level 2: userA (Qualified! directCount = 2) -> Must get $2!
+    // Level 3: rootId (owner) -> (Unqualified < 2) -> Must get $0!
+    await core.connect(userC).createSubId(0, 0);
+
+    const reserveAfter = await core.protocolReserveBalance();
+    const lvlB_after = await core.userUnclaimedLevelIncome(idB);
+    const lvlA_after = await core.userUnclaimedLevelIncome(idA);
+
+    // userB received $0 because unqualified
+    expect(lvlB_after - lvlB_before).to.equal(0n);
+
+    // userA received strictly Level 2 income ($2 USDT), NOT Level 1 ($3 USDT)!
+    expect(lvlA_after - lvlA_before).to.equal(ethers.parseEther("2"));
+
+    // Reserve balance gained 15 USDT (from Sub-ID entry) and spent only 2 USDT!
+    // So Net Gain in Reserve = 13 USDT!
+    expect(reserveAfter - reserveBefore).to.equal(ethers.parseEther("13"));
+  });
 });

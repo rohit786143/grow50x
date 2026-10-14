@@ -364,30 +364,27 @@ contract Grow50XCoreV1_2 is Grow50XStorage, Grow50XEvents, ReentrancyGuard, Owna
 
     function _processLevelIncomeV1_2(uint256 sourceSubId, uint256 mainUserId) internal {
         uint256 currentSponsorId = users[sourceSubId].sponsorId;
-        uint8 externalEligibleCount = 0;
+        while (currentSponsorId != 0 && users[currentSponsorId].ownerMainUserId == mainUserId) {
+            currentSponsorId = users[currentSponsorId].sponsorId;
+        }
 
-        while (currentSponsorId != 0 && externalEligibleCount < 3) {
+        for (uint8 level = 1; level <= 3; level++) {
+            if (currentSponsorId == 0) break;
+
             uint256 beneficiaryMainUserId = users[currentSponsorId].ownerMainUserId;
+            uint256 directCount = users[beneficiaryMainUserId].directCount;
 
-            if (beneficiaryMainUserId != mainUserId) {
-                uint256 directCount = users[beneficiaryMainUserId].directCount;
+            if (directCount >= 2) {
+                uint256 levelAmount = (level == 1) ? LEVEL_1_INCOME : ((level == 2) ? LEVEL_2_INCOME : LEVEL_3_INCOME);
 
-                if (directCount >= 2) {
-                    externalEligibleCount++;
-                    uint256 levelAmount = 0;
-                    if (externalEligibleCount == 1) levelAmount = LEVEL_1_INCOME;      // $3 USDT (3%)
-                    else if (externalEligibleCount == 2) levelAmount = LEVEL_2_INCOME; // $2 USDT (2%)
-                    else if (externalEligibleCount == 3) levelAmount = LEVEL_3_INCOME; // $1 USDT (1%)
+                if (protocolReserveBalance >= levelAmount) {
+                    protocolReserveBalance -= levelAmount;
 
-                    if (protocolReserveBalance >= levelAmount) {
-                        protocolReserveBalance -= levelAmount;
+                    userIncomes[beneficiaryMainUserId].levelIncome += levelAmount;
+                    userUnclaimedLevelIncome[beneficiaryMainUserId] += levelAmount;
 
-                        userIncomes[beneficiaryMainUserId].levelIncome += levelAmount;
-                        userUnclaimedLevelIncome[beneficiaryMainUserId] += levelAmount;
-
-                        emit LevelIncomeAccrued(beneficiaryMainUserId, sourceSubId, externalEligibleCount, levelAmount, block.timestamp);
-                        emit ReserveUsed("LevelIncome", levelAmount, protocolReserveBalance);
-                    }
+                    emit LevelIncomeAccrued(beneficiaryMainUserId, sourceSubId, level, levelAmount, block.timestamp);
+                    emit ReserveUsed("LevelIncome", levelAmount, protocolReserveBalance);
                 }
             }
 
