@@ -149,28 +149,28 @@ export default function AdminGuard({ children }: AdminGuardProps) {
 
   // Render Light Glassmorphism Login Gate Screen (Step 1 or Step 2)
   return (
-    <div className="flex items-start justify-center pt-4 sm:pt-8 pb-12 p-4 bg-transparent relative">
+    <div className="flex items-start justify-center pt-0 sm:pt-0 -mt-3 sm:-mt-7 pb-6 px-3 sm:px-4 bg-transparent relative">
       {/* Background Soft Color Glow Blobs matching website */}
-      <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-emerald-400/15 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-emerald-400/15 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-10 right-10 w-[350px] h-[350px] bg-sky-400/15 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="w-full max-w-md bg-white/95 backdrop-blur-xl border border-slate-200/90 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-slate-300/40 relative z-10">
+      <div className="w-full max-w-md bg-white/95 backdrop-blur-xl border border-slate-200/90 rounded-3xl p-5 sm:p-6 shadow-2xl shadow-slate-300/40 relative z-10">
         
         {/* Header Logo Badge & Title */}
-        <div className="text-center mb-6">
-          <div className="w-16 h-16 mx-auto mb-3 bg-gradient-to-br from-emerald-500 via-teal-500 to-sky-600 rounded-2xl p-0.5 shadow-lg shadow-emerald-500/25 flex items-center justify-center">
-            <div className="w-full h-full bg-white rounded-[14px] flex items-center justify-center text-3xl">
+        <div className="text-center mb-4 sm:mb-5">
+          <div className="w-13 h-13 sm:w-14 sm:h-14 mx-auto mb-2 bg-gradient-to-br from-emerald-500 via-teal-500 to-sky-600 rounded-2xl p-0.5 shadow-lg shadow-emerald-500/25 flex items-center justify-center">
+            <div className="w-full h-full bg-white rounded-[14px] flex items-center justify-center text-2xl">
               🛡️
             </div>
           </div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">GROW 50X ADMIN LOGIN</h1>
-          <p className="text-xs text-emerald-700 font-bold mt-1">
+          <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">GROW 50X ADMIN LOGIN</h1>
+          <p className="text-xs text-emerald-700 font-bold mt-0.5">
             Restricted System Protocol Console • 2-Step Authentication
           </p>
 
           {/* Stepper Indicator Badge */}
-          <div className="flex items-center justify-center gap-2 mt-4">
-            <div className={`px-3 py-1 rounded-full text-[11px] font-extrabold flex items-center gap-1 transition-all ${
+          <div className="flex items-center justify-center gap-2 mt-3">
+            <div className={`px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-extrabold flex items-center gap-1 transition-all ${
               currentStep === 1
                 ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-500/20'
                 : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
@@ -178,7 +178,7 @@ export default function AdminGuard({ children }: AdminGuardProps) {
               <span>1</span> Login ID & Password {credentialsPassed && '✓'}
             </div>
             <span className="text-slate-400 text-xs font-bold">→</span>
-            <div className={`px-3 py-1 rounded-full text-[11px] font-extrabold flex items-center gap-1 transition-all ${
+            <div className={`px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-extrabold flex items-center gap-1 transition-all ${
               currentStep === 2
                 ? 'bg-gradient-to-r from-sky-600 to-blue-600 text-white shadow-md shadow-sky-500/20'
                 : 'bg-slate-100 text-slate-500 border border-slate-200'
@@ -190,7 +190,7 @@ export default function AdminGuard({ children }: AdminGuardProps) {
 
         {/* Error Alert Box */}
         {errorMsg && (
-          <div className="mb-5 p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2 animate-shake shadow-sm">
+          <div className="mb-4 p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2 animate-shake shadow-sm">
             <span className="text-base">🚨</span>
             <span>{errorMsg}</span>
           </div>
@@ -198,9 +198,9 @@ export default function AdminGuard({ children }: AdminGuardProps) {
 
         {/* STEP 1: Login ID & Password Form */}
         {currentStep === 1 && (
-          <form onSubmit={handleVerifyCredentials} className="space-y-4">
+          <form onSubmit={handleVerifyCredentials} className="space-y-3.5">
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
+              <label className="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">
                 Admin Login ID
               </label>
               <div className="relative">
@@ -210,14 +210,14 @@ export default function AdminGuard({ children }: AdminGuardProps) {
                   value={loginId}
                   onChange={(e) => setLoginId(e.target.value)}
                   placeholder="Enter Admin Login ID"
-                  className="w-full bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:bg-white rounded-xl px-4 py-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 font-medium transition-all shadow-sm"
+                  className="w-full bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:bg-white rounded-xl px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 font-medium transition-all shadow-sm"
                 />
                 <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm">👤</span>
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
+              <label className="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">
                 Admin Password
               </label>
               <div className="relative">
@@ -227,7 +227,7 @@ export default function AdminGuard({ children }: AdminGuardProps) {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter Admin Password"
-                  className="w-full bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:bg-white rounded-xl px-4 py-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 font-medium transition-all shadow-sm pr-12"
+                  className="w-full bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:bg-white rounded-xl px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 font-medium transition-all shadow-sm pr-12"
                 />
                 <button
                   type="button"
@@ -241,7 +241,7 @@ export default function AdminGuard({ children }: AdminGuardProps) {
 
             <button
               type="submit"
-              className="w-full mt-2 bg-gradient-to-r from-emerald-600 via-teal-600 to-sky-600 hover:from-emerald-500 hover:to-sky-500 text-white font-black text-sm py-3.5 rounded-xl shadow-lg shadow-emerald-600/20 hover:shadow-emerald-600/30 transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2"
+              className="w-full mt-2 bg-gradient-to-r from-emerald-600 via-teal-600 to-sky-600 hover:from-emerald-500 hover:to-sky-500 text-white font-black text-sm py-3 rounded-xl shadow-lg shadow-emerald-600/20 hover:shadow-emerald-600/30 transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2"
             >
               <span>🔑</span> Next: Verify Credentials
             </button>
