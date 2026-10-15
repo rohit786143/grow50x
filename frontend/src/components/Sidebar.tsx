@@ -193,6 +193,11 @@ function SidebarInner({ isMobileOpen, onCloseMobile }: SidebarProps) {
             onChange={(e) => {
               setSelectedUserId(Number(e.target.value));
               onCloseMobile?.();
+              if (typeof window !== 'undefined') {
+                window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+                document.documentElement.scrollTop = 0;
+                document.body.scrollTop = 0;
+              }
             }}
             className="w-full bg-white border border-slate-300 text-slate-900 font-extrabold text-xs rounded-xl pl-2.5 pr-6 py-2.5 outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 cursor-pointer shadow-sm transition-all tracking-tight"
           >

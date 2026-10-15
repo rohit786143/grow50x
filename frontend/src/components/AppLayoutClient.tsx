@@ -1,13 +1,60 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import WalletConnect from './WalletConnect';
 import Sidebar from './Sidebar';
 import NetworkBanner from './NetworkBanner';
 import MotherboardBackground from './MotherboardBackground';
-import { Web3Provider } from '../context/Web3Context';
+import { Web3Provider, useWeb3 } from '../context/Web3Context';
+
+// 🔝 Dedicated ScrollToTop Component: Guarantees page top is always displayed first on any page load or ID switch
+function ScrollToTopInner() {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const { selectedUserId, mainUserId, account } = useWeb3();
+
+  useEffect(() => {
+    // Disable browser default scroll restoration so it never loads scrolled down
+    if (typeof window !== 'undefined' && 'scrollRestoration' in history) {
+      history.scrollRestoration = 'manual';
+    }
+  }, []);
+
+  useEffect(() => {
+    const scrollToTop = () => {
+      if (typeof window !== 'undefined') {
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+        const mainEl = document.querySelector('main');
+        if (mainEl) {
+          mainEl.scrollTop = 0;
+        }
+      }
+    };
+
+    scrollToTop();
+    const rafId = requestAnimationFrame(scrollToTop);
+    const timerId = setTimeout(scrollToTop, 60);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      clearTimeout(timerId);
+    };
+  }, [pathname, searchParams, selectedUserId, mainUserId, account]);
+
+  return null;
+}
+
+function ScrollToTop() {
+  return (
+    <Suspense fallback={null}>
+      <ScrollToTopInner />
+    </Suspense>
+  );
+}
 
 export default function AppLayoutClient({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -16,6 +63,9 @@ export default function AppLayoutClient({ children }: { children: React.ReactNod
 
   return (
     <Web3Provider>
+      {/* 🔝 Enforce Top Scroll on Any Page or ID Open */}
+      <ScrollToTop />
+
       {/* ⚡ Animated Golden Motherboard Circuit Background (Behind All UI) */}
       <MotherboardBackground />
       {/* 📌 Top Header Bar 100% FIXED at top (Stays Static on Scroll) */}
@@ -60,8 +110,8 @@ export default function AppLayoutClient({ children }: { children: React.ReactNod
         </div>
       </header>
 
-      {/* Main Body Container with Top Padding for Fixed Header */}
-      <div className={`${isHomePage ? 'pt-14 sm:pt-16' : 'pt-16 sm:pt-20'} flex-1 flex flex-col min-h-screen relative z-10`}>
+      {/* Main Body Container with Enhanced Top Padding for Fixed Header (Guarantees top cards are never covered) */}
+      <div className={`${isHomePage ? 'pt-16 sm:pt-20' : 'pt-20 sm:pt-24'} flex-1 flex flex-col min-h-screen relative z-10`}>
         <NetworkBanner />
 
         {/* Conditional Layout: Full width on Home Landing Page, Sidebar on Inner App Pages */}
@@ -75,7 +125,8 @@ export default function AppLayoutClient({ children }: { children: React.ReactNod
               isMobileOpen={isMobileMenuOpen}
               onCloseMobile={() => setIsMobileMenuOpen(false)}
             />
-            <main className="flex-1 p-3 sm:p-6 lg:p-8 overflow-y-auto w-full min-w-0 relative z-10">
+            {/* Main content viewport without nested overflow-y trap so window scrolls cleanly */}
+            <main className="flex-1 p-3 sm:p-6 lg:p-8 w-full min-w-0 relative z-10">
               {children}
             </main>
           </div>

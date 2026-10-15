@@ -472,6 +472,11 @@ function BoardsContent() {
     setSelectedUserId(targetId);
     setTargetBoardId(null); // Reset manual board override so loadUserBoardState queries active open board unit of targetId
     setShowCompletedTreeAnyway(false);
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }
   };
 
   const boardNames = [
@@ -483,6 +488,15 @@ function BoardsContent() {
   ];
 
   const activeUserIdForRender = selectedAccountId || selectedUserId || mainUserId;
+
+  // Enforce immediate scroll-to-top whenever account ID or board level changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }
+  }, [activeUserIdForRender, selectedBoardLevel]);
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
