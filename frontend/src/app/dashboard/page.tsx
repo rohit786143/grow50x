@@ -464,44 +464,51 @@ function DashboardContent() {
         </div>
       )}
 
-      {/* ⏳ TOP CONSOLIDATED 1-LINE TIMER & CLAIM BAR */}
-      <div className="bg-slate-900 text-white px-5 py-2.5 rounded-2xl border border-slate-800 shadow-md flex items-center justify-between gap-3 text-xs relative overflow-hidden">
+      {/* ⏳ TOP CONSOLIDATED TIMER & CLAIM BAR (FULLY MOBILE & DESKTOP RESPONSIVE) */}
+      <div className="bg-slate-900 text-white p-3.5 sm:px-5 sm:py-3 rounded-2xl border border-slate-800 shadow-md relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
         <div className="absolute top-0 right-0 w-64 h-64 bg-sky-500/10 rounded-full blur-xl -z-0 pointer-events-none" />
 
-        {/* Left: Next Cutoff */}
-        <div className="flex items-center gap-2 relative z-10 shrink-0">
-          <span className="animate-pulse flex h-2 w-2 rounded-full bg-emerald-400" />
-          <span className="text-slate-400 font-semibold text-xs">Next Cutoff:</span>
-          <span className="text-emerald-400 font-bold text-xs">{nextCutoffDateStr || 'Calculating...'}</span>
+        {/* Left / Top Row on Mobile: Next Cutoff + Live Countdown Timer */}
+        <div className="flex flex-wrap items-center justify-between sm:justify-start gap-2 relative z-10 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="animate-pulse flex h-2.5 w-2.5 rounded-full bg-emerald-400 shrink-0" />
+            <div className="flex flex-col sm:flex-row sm:items-center sm:gap-1.5">
+              <span className="text-slate-400 font-semibold text-[11px] sm:text-xs">Next Cutoff:</span>
+              <span className="text-emerald-400 font-extrabold text-xs">
+                {nextCutoffDateStr || 'Calculating...'}
+              </span>
+            </div>
+          </div>
+
+          {/* Live Countdown Timer Badge */}
+          <div className="flex items-center gap-1 font-mono text-[11px] sm:text-xs font-bold bg-slate-800/95 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl border border-slate-700/80 shadow-inner shrink-0">
+            <span className="text-sky-400">{String(timeLeft.days).padStart(2, '0')}d</span>
+            <span className="text-slate-500">:</span>
+            <span className="text-sky-400">{String(timeLeft.hours).padStart(2, '0')}h</span>
+            <span className="text-slate-500">:</span>
+            <span className="text-sky-400">{String(timeLeft.minutes).padStart(2, '0')}m</span>
+            <span className="text-slate-500">:</span>
+            <span className="text-emerald-400 animate-pulse">{String(timeLeft.seconds).padStart(2, '0')}s</span>
+          </div>
         </div>
 
-        {/* Center: Live Countdown Timer */}
-        <div className="hidden sm:flex items-center gap-1 font-mono text-xs font-bold bg-slate-800/90 px-3 py-1.5 rounded-xl border border-slate-700/70 relative z-10">
-          <span className="text-sky-400">{String(timeLeft.days).padStart(2, '0')}d</span>
-          <span className="text-slate-600">:</span>
-          <span className="text-sky-400">{String(timeLeft.hours).padStart(2, '0')}h</span>
-          <span className="text-slate-600">:</span>
-          <span className="text-sky-400">{String(timeLeft.minutes).padStart(2, '0')}m</span>
-          <span className="text-slate-600">:</span>
-          <span className="text-emerald-400 animate-pulse">{String(timeLeft.seconds).padStart(2, '0')}s</span>
-        </div>
-
-        {/* Right: CLAIM ALL INCOME Button */}
-        <div className="flex items-center gap-2 relative z-10 shrink-0">
+        {/* Right / Bottom Row on Mobile: CLAIM ALL INCOME & Finalize Buttons */}
+        <div className="flex items-center gap-2 relative z-10 w-full md:w-auto shrink-0 pt-1 md:pt-0 border-t border-slate-800/80 md:border-t-0">
           <button
             onClick={handleClaimAllUserIncome}
             disabled={isClaiming || (totalUnclaimed === 0 && claimingCategory !== 'all')}
-            className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 disabled:opacity-50 text-white px-4 py-2 rounded-xl font-extrabold text-xs uppercase tracking-wider transition-all shadow-md shadow-emerald-500/20 flex items-center gap-1.5 hover:scale-105 active:scale-95"
+            className="w-full md:w-auto bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-600 hover:to-teal-700 disabled:opacity-50 text-white px-4 py-2.5 sm:py-2 rounded-xl font-black text-xs uppercase tracking-wider transition-all shadow-md shadow-emerald-500/25 flex items-center justify-center gap-1.5 hover:scale-[1.02] active:scale-95"
             title="Claim all pending Share, Direct, Level, and Board Income across Main ID and all Sub-IDs in 1 transaction"
           >
-            <span>⚡</span> {claimingCategory === 'all' ? 'Claiming All...' : `CLAIM ALL INCOME ${totalUnclaimed > 0 ? `($${totalUnclaimed.toFixed(2)})` : ''}`}
+            <span>⚡</span>
+            <span>{claimingCategory === 'all' ? 'Claiming All...' : `CLAIM ALL INCOME ${totalUnclaimed > 0 ? `($${totalUnclaimed.toFixed(2)})` : ''}`}</span>
           </button>
 
           {timeLeft.totalSec === 0 && (
             <button
               onClick={handleFinalizePeriod}
               disabled={isFinalizing}
-              className="bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white px-3 py-2 rounded-xl font-bold text-xs uppercase tracking-wider transition-all shadow-sm"
+              className="bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white px-3.5 py-2.5 sm:py-2 rounded-xl font-bold text-xs uppercase tracking-wider transition-all shadow-sm shrink-0"
             >
               {isFinalizing ? 'Finalizing...' : '⚡ Finalize'}
             </button>
@@ -520,36 +527,38 @@ function DashboardContent() {
         </div>
       )}
 
-      {/* Top Banner - Compact (60% Height Reduction) */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-white py-2.5 px-4 sm:px-5 rounded-2xl border border-slate-200 shadow-sm">
-        <div className="flex flex-col justify-center">
+      {/* Top Banner - Mobile & Desktop Responsive */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 sm:px-5 sm:py-3 rounded-2xl border border-slate-200 shadow-sm">
+        <div className="flex flex-col justify-center min-w-0">
           <span className="text-[10px] font-bold text-sky-600 uppercase tracking-wider leading-none">
             Live Account Telemetry ({ghostTargetId > 0 ? 'Admin Ghost Inspection' : isSubIdSelected ? 'Sub-ID Active' : 'Main ID Active'})
           </span>
-          <div className="flex items-baseline gap-2 mt-0.5">
-            <h1 className="text-lg sm:text-xl font-black text-slate-900 leading-tight">
+          <div className="flex flex-wrap items-baseline gap-2 mt-1">
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900 leading-tight">
               Account ID: <span className="gradient-text-blue">{displayId}</span>
             </h1>
-            <p className="text-[11px] font-mono text-slate-400 truncate max-w-[220px] sm:max-w-[320px]">
-              {account ? account : 'On-Chain Public Telemetry'}
-            </p>
+            {account && (
+              <span className="text-[11px] font-mono text-slate-400 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200">
+                {account.slice(0, 6)}...{account.slice(-4)}
+              </span>
+            )}
           </div>
         </div>
 
-        <div className="flex items-center gap-2 self-start sm:self-auto">
-          <div className="bg-slate-50 px-3 py-1 rounded-xl border border-slate-200 text-center flex items-center gap-2 sm:block">
+        <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
+          <div className="bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 text-center">
             <span className="text-[9px] uppercase font-bold text-slate-400 block">Total Owned IDs</span>
-            <p className="text-sm font-black text-sky-600 leading-none">{totalOwnedIds}</p>
+            <p className="text-sm font-black text-sky-600 mt-0.5">{totalOwnedIds}</p>
           </div>
-          <div className="bg-slate-50 px-3 py-1 rounded-xl border border-slate-200 text-center flex items-center gap-2 sm:block">
+          <div className="bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 text-center">
             <span className="text-[9px] uppercase font-bold text-slate-400 block">Current Board</span>
-            <p className="text-sm font-black text-emerald-600 leading-none">Board {currentBoard}</p>
+            <p className="text-sm font-black text-emerald-600 mt-0.5">Board {currentBoard}</p>
           </div>
         </div>
       </div>
 
-      {/* 💎 TOTAL COMBINED INCOME CARD (Compact Height - Reduced 40%) */}
-      <div className="bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-600 text-white py-3.5 px-5 sm:px-6 rounded-2xl shadow-md shadow-sky-500/15 flex flex-col md:flex-row md:items-center justify-between gap-2.5">
+      {/* 💎 TOTAL COMBINED INCOME CARD */}
+      <div className="bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-600 text-white p-4 sm:py-3.5 sm:px-6 rounded-2xl shadow-md shadow-sky-500/15 flex flex-col md:flex-row md:items-center justify-between gap-2.5">
         <div>
           <span className="text-[10px] font-bold uppercase tracking-wider text-sky-100 leading-none block">Aggregated Earnings</span>
           <h2 className="text-lg sm:text-2xl font-black mt-0.5 leading-tight">💎 Total Earned Income</h2>
@@ -567,11 +576,11 @@ function DashboardContent() {
       </div>
 
       {/* Main Qualification & Cap Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+        <div className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-sm space-y-3.5 sm:space-y-4">
           <div className="flex justify-between items-center">
-            <span className="text-xs font-bold text-slate-400 uppercase">Direct Qualification</span>
-            <span className="text-xs font-bold text-sky-600">
+            <span className="text-[11px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Direct Qualification</span>
+            <span className="text-xs sm:text-sm font-extrabold text-sky-600 bg-sky-50 px-2.5 py-1 rounded-lg border border-sky-100">
               {directCount} / {requiredDirects} Directs
             </span>
           </div>
@@ -588,34 +597,39 @@ function DashboardContent() {
           </p>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4 md:col-span-2">
-          <div className="flex justify-between items-center">
+        {/* 🌟 Lifetime Share Income vs Board Cap - Fully Mobile Friendly */}
+        <div className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-sm space-y-3.5 sm:space-y-4 md:col-span-2">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
             <div>
-              <span className="text-xs font-bold text-slate-400 uppercase">Lifetime Share Income vs Board Cap</span>
-              <p className="text-sm font-semibold text-slate-800 mt-0.5">
-                ${lifetimeShareEarned.toFixed(2)} USDT Earned / ${currentBoardCap.toFixed(2)} USDT Max (Board {currentBoard})
+              <span className="text-[11px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider block">
+                Lifetime Share Income vs Board Cap
+              </span>
+              <p className="text-sm sm:text-base font-extrabold text-slate-900 mt-1">
+                ${lifetimeShareEarned.toFixed(2)} <span className="text-xs font-semibold text-slate-500">Earned</span> / ${currentBoardCap.toFixed(2)} <span className="text-xs font-semibold text-slate-500">Max (Board {currentBoard})</span>
               </p>
             </div>
             {remainingShareCap <= 0 ? (
-              <span className="text-xs font-black text-amber-900 bg-amber-100 px-3.5 py-1.5 rounded-full border border-amber-300 flex items-center gap-1 shadow-sm">
-                🎉 ALL POOL INCOME RECEIVED (${currentBoardCap.toFixed(2)} MAX CAP COMPLETED)
+              <span className="text-xs font-black text-amber-900 bg-amber-100 px-3 py-1.5 rounded-full border border-amber-300 flex items-center gap-1 shadow-xs self-start sm:self-auto">
+                🎉 ALL POOL INCOME RECEIVED (${currentBoardCap.toFixed(2)} MAX CAP)
               </span>
             ) : (
-              <span className="text-xs font-extrabold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
-                Remaining: ${remainingShareCap.toFixed(2)} USDT
-              </span>
+              <div className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 self-start sm:self-auto shrink-0">
+                <span className="text-[10px] font-semibold text-emerald-600 uppercase">Remaining:</span>
+                <span className="font-extrabold text-xs sm:text-sm text-emerald-700">${remainingShareCap.toFixed(2)} USDT</span>
+              </div>
             )}
           </div>
 
-          <div className="w-full bg-slate-100 h-3.5 rounded-full overflow-hidden">
+          <div className="w-full bg-slate-100 h-3 sm:h-3.5 rounded-full overflow-hidden">
             <div
               className="bg-gradient-to-r from-emerald-500 via-sky-500 to-indigo-500 h-full rounded-full transition-all duration-500"
               style={{ width: `${shareCapPercentage}%` }}
             />
           </div>
-          <p className="text-xs text-slate-400">
-            Note: Cumulative share income cap DOES NOT reset when advancing boards.
-          </p>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px] text-slate-400">
+            <span>Cumulative share income cap does NOT reset when advancing boards.</span>
+            <span className="font-bold text-slate-600">{shareCapPercentage.toFixed(1)}% Reached</span>
+          </div>
         </div>
       </div>
 
@@ -700,16 +714,16 @@ function DashboardContent() {
         </div>
 
         <div className="flex flex-col sm:flex-row items-center gap-2 pt-1">
-          <div className="relative w-full">
+          <div className="relative w-full min-w-0">
             <input
               type="text"
               readOnly
               value={typeof window !== 'undefined' ? `${window.location.origin}/register?sponsor=${displayId}` : `http://localhost:3000/register?sponsor=${displayId}`}
-              className="w-full bg-white border border-sky-200 text-sky-700 font-mono text-xs font-bold px-4 py-3 rounded-2xl outline-none select-all shadow-inner"
+              className="w-full bg-white border border-sky-200 text-sky-700 font-mono text-xs font-bold px-4 py-3 rounded-2xl outline-none select-all shadow-inner truncate"
             />
           </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+          <div className="w-full sm:w-auto shrink-0">
             <button
               onClick={() => {
                 const link = typeof window !== 'undefined' ? `${window.location.origin}/register?sponsor=${displayId}` : `http://localhost:3000/register?sponsor=${displayId}`;
@@ -718,20 +732,11 @@ function DashboardContent() {
                   setActionMsg({ text: `✓ Referral link for ${displayId} copied to clipboard!`, type: 'success' });
                 }
               }}
-              className="w-full sm:w-auto px-5 py-3 rounded-2xl text-xs font-black bg-sky-600 hover:bg-sky-500 text-white transition-all shadow-md shadow-sky-500/20 flex items-center justify-center gap-1.5 whitespace-nowrap"
+              className="w-full sm:w-auto px-6 py-3 rounded-2xl text-xs font-black bg-sky-600 hover:bg-sky-500 text-white transition-all shadow-md shadow-sky-500/20 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 whitespace-nowrap"
             >
               <span>📋</span>
               <span>Copy Referral Link</span>
             </button>
-
-            <a
-              href={`/register?sponsor=${displayId}`}
-              target="_blank"
-              rel="noreferrer"
-              className="px-4 py-3 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-2xl text-xs font-bold transition-all shadow-sm whitespace-nowrap flex items-center gap-1"
-            >
-              <span>↗️</span> Test Link
-            </a>
           </div>
         </div>
       </div>
