@@ -26,7 +26,7 @@ function RegisterFormContent() {
   const [mounted, setMounted] = useState<boolean>(false);
 
   // Form inputs
-  const [sponsorInput, setSponsorInput] = useState<string>('363306');
+  const [sponsorInput, setSponsorInput] = useState<string>('');
   const [placementInput, setPlacementInput] = useState<string>('');
   const [placementStatus, setPlacementStatus] = useState<{ isChecking: boolean; isEligible: boolean; message: string }>({
     isChecking: false,
@@ -254,7 +254,7 @@ function RegisterFormContent() {
 
       if (count > 0) {
         if (sponsorIdNum <= 0) {
-          alert('Please enter a valid 6-digit numeric Sponsor ID (e.g. GR363306 or 363306).');
+          alert('Please enter a valid 6-digit numeric Sponsor ID (e.g. GR123456 or 123456).');
           setIsSubmitting(false);
           setStatusMessage('❌ Invalid Sponsor ID.');
           return;
@@ -445,11 +445,11 @@ function RegisterFormContent() {
                     type="text"
                     value={sponsorInput}
                     onChange={(e) => setSponsorInput(e.target.value.toUpperCase())}
-                    placeholder="e.g. GR363306 or 363306"
+                    placeholder="e.g. GR123456 or 123456"
                     required
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 font-mono focus:outline-none focus:border-sky-500"
                   />
-                  <p className="text-[11px] text-slate-500 mt-1">Type Sponsor ID with or without GR prefix (e.g. GR363306 or 363306).</p>
+                  <p className="text-[11px] text-slate-500 mt-1">Type Sponsor ID with or without GR prefix (e.g. GR123456 or 123456).</p>
                 </div>
 
                 <div>
