@@ -229,26 +229,42 @@ export default function SubIdsPage() {
         setStatusMessage('USDT approval confirmed! Creating Sub-ID batch...');
       }
 
-      // 2. Execute Batch Sub-ID Creation
-      setStatusMessage(`Creating ${batchCount} Sub-ID(s) automatically (Step 2/2)...`);
-      let gasLimit: bigint = BigInt(220000 + batchCount * 140000);
-      try {
-        const estGas = await coreContract.createBatchSubIds.estimateGas(batchCount);
-        gasLimit = (estGas * BigInt(115)) / BigInt(100);
-        const minFloor = BigInt(220000 + batchCount * 130000);
-        if (gasLimit < minFloor) {
-          gasLimit = minFloor;
+      // 2. Execute Sub-ID Creation with Smart Placement Routing (Sponsor 1st, Oldest Board 2nd)
+      setStatusMessage(`Creating ${batchCount} Sub-ID(s) with Smart Placement Routing...`);
+
+      const targetSponsor = manualSponsorId > 0 ? manualSponsorId : mainUserId;
+
+      for (let i = 0; i < batchCount; i++) {
+        setStatusMessage(`Finding optimal placement parent for Sub-ID ${i + 1}/${batchCount}...`);
+        const smartPlacement = await findSmartPlacementParentId(coreContract, targetSponsor);
+
+        if (smartPlacement.placementParentId <= 0) {
+          alert(`❌ No open placement slot found in any active Board 1 unit for Sub-ID ${i + 1}!`);
+          setIsSubmitting(false);
+          return;
         }
-      } catch (e) {
-        console.warn('Could not estimate batch gas, using calculated fallback limit:', e);
-        gasLimit = BigInt(220000 + batchCount * 140000);
+
+        const pId = smartPlacement.placementParentId;
+        setStatusMessage(`Creating Sub-ID ${i + 1}/${batchCount} in Board #${smartPlacement.boardId} under GR${pId} (${smartPlacement.slotName})...`);
+
+        let gasLimit: bigint;
+        try {
+          const estGas = await coreContract.createSubId.estimateGas(targetSponsor, pId);
+          gasLimit = (estGas * BigInt(115)) / BigInt(100);
+          if (gasLimit < BigInt(320000)) {
+            gasLimit = BigInt(320000);
+          }
+        } catch (e) {
+          console.warn('Could not estimate sub-id gas, using fallback limit:', e);
+          gasLimit = BigInt(380000);
+        }
+
+        const tx = await coreContract.createSubId(targetSponsor, pId, { gasLimit });
+        await tx.wait(1);
       }
 
-      const batchTx = await coreContract.createBatchSubIds(batchCount, { gasLimit });
-      await batchTx.wait(1);
-
-      setStatusMessage(`🎉 Successfully created ${batchCount} Sub-IDs!`);
-      alert(`🎉 Success! ${batchCount} Sub-IDs created automatically!`);
+      setStatusMessage(`🎉 Successfully created ${batchCount} Sub-ID(s) with Smart Placement Routing!`);
+      alert(`🎉 Success! ${batchCount} Sub-ID(s) created automatically in Oldest Board!`);
 
       await loadOwnedIds();
     } catch (err: any) {
