@@ -3,7 +3,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { ethers } from 'ethers';
-import { CONTRACT_ADDRESSES, GROW50X_CORE_ABI, isAdminWallet, getAdminIndex } from '../../config/contracts';
+import { CONTRACT_ADDRESSES, GROW50X_CORE_ABI, BSC_EXPLORER_URL, isAdminWallet, getAdminIndex } from '../../config/contracts';
 import PlanPresentation from '../../components/PlanPresentation';
 import { useWeb3 } from '../../context/Web3Context';
 
@@ -93,6 +93,16 @@ function DashboardContent() {
 
   // Action States
   const [isClaiming, setIsClaiming] = useState<boolean>(false);
+  const [copiedContract, setCopiedContract] = useState<boolean>(false);
+
+  const handleCopyContract = () => {
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(CONTRACT_ADDRESSES.GROW50X_CORE);
+      setCopiedContract(true);
+      setTimeout(() => setCopiedContract(false), 2000);
+      setActionMsg({ text: '✓ Smart Contract address copied to clipboard!', type: 'success' });
+    }
+  };
   const [isFinalizing, setIsFinalizing] = useState<boolean>(false);
   const [actionMsg, setActionMsg] = useState<{ text: string; type: 'success' | 'error' | 'info' } | null>(null);
 
@@ -677,27 +687,30 @@ function DashboardContent() {
 
 
       {/* 🔗 DYNAMIC BRIGHT REFERRAL LINK BOX (BELOW INCOME DETAILS - FOR EACH MAIN ID OR SUB-ID) */}
-      <div className="bg-gradient-to-r from-sky-50 via-blue-50 to-indigo-50 p-5 sm:p-6 rounded-3xl border-2 border-sky-200/80 shadow-sm text-slate-900 space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div className="flex items-center gap-3">
-            <span className="p-2.5 bg-white text-sky-600 rounded-2xl border border-sky-200 shadow-sm text-xl">🔗</span>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-base sm:text-lg font-black text-slate-900">
-                  Direct Referral Link ({displayId})
-                </h3>
-                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase border ${
-                  isSubIdSelected
-                    ? 'bg-purple-100 text-purple-700 border-purple-200'
-                    : 'bg-sky-100 text-sky-700 border-sky-200'
-                }`}>
-                  {isSubIdSelected ? 'Sub-ID Sponsor Link' : 'Main ID Sponsor Link'}
-                </span>
-              </div>
-              <p className="text-xs text-slate-600 mt-0.5">
-                Share this unique link to sponsor direct members &amp; sub-ids directly under account <strong className="text-sky-700 font-extrabold">{displayId}</strong>.
-              </p>
-            </div>
+      <div className="bg-gradient-to-r from-sky-50 via-blue-50 to-indigo-50 p-4 sm:p-6 rounded-3xl border-2 border-sky-200/80 shadow-sm text-slate-900 space-y-3">
+        {/* Top Header Badge Row - Prominently Displayed on Mobile & Desktop */}
+        <div className="flex items-center justify-between gap-2 border-b border-sky-200/60 pb-2.5">
+          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider border shadow-2xs whitespace-nowrap ${
+            isSubIdSelected
+              ? 'bg-purple-100 text-purple-700 border-purple-200'
+              : 'bg-sky-100 text-sky-700 border-sky-200'
+          }`}>
+            <span>⭐</span> {isSubIdSelected ? 'Sub-ID Sponsor Link' : 'Main ID Sponsor Link'}
+          </span>
+          <span className="text-xs font-extrabold text-sky-800 font-mono bg-white px-2.5 py-0.5 rounded-lg border border-sky-200/80 shadow-2xs">
+            {displayId}
+          </span>
+        </div>
+
+        <div className="flex items-start gap-3 pt-1">
+          <span className="p-2.5 bg-white text-sky-600 rounded-2xl border border-sky-200 shadow-sm text-xl shrink-0">🔗</span>
+          <div>
+            <h3 className="text-base sm:text-lg font-black text-slate-900 leading-tight">
+              Direct Referral Link
+            </h3>
+            <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+              Share this unique link to sponsor direct members &amp; sub-ids directly under account <strong className="text-sky-700 font-extrabold">{displayId}</strong>.
+            </p>
           </div>
         </div>
 
@@ -729,17 +742,96 @@ function DashboardContent() {
         </div>
       </div>
 
-      {/* 📘 10-DAY SHARE POOL RULES EXPLANATION BOX */}
-      <div className="bg-amber-50/80 border border-amber-200 rounded-2xl p-4 sm:p-6 space-y-3">
-        <h3 className="text-xs sm:text-sm font-bold text-amber-900 flex items-center gap-2">
-          <span>📅</span> Fixed Calendar Dates Share Pool Distribution Rules (5th, 15th & 25th - Dubai Time)
-        </h3>
-        <ul className="text-xs text-amber-950 space-y-1.5 list-disc list-inside">
-          <li><strong>Fixed Distribution Dates:</strong> Distribution DOES NOT start from user registration date. It takes place on fixed calendar dates: <strong>5th, 15th, and 25th</strong> of every month at 23:59:59 GST (Dubai Time UTC+4).</li>
-          <li><strong>Accumulation:</strong> Every new $100 package registration or Sub-ID creation automatically adds <strong>$30 USDT</strong> to the Share Pool.</li>
-          <li><strong>Proportional Shares:</strong> Distribution is divided based on your active Board Level share multiplier (Board 1 = 1x, Board 2 = 2x, Board 3 = 3x, Board 4 = 4x, Board 5 = 5x).</li>
-          <li><strong>How to Claim:</strong> On the cutoff date (or anytime after finalization), click <strong>&quot;💰 Claim Share Income&quot;</strong> on your dashboard to receive your payouts directly into your connected Web3 USDT wallet.</li>
-        </ul>
+      {/* 📘 10-DAY SHARE POOL RULES EXPLANATION BOX (JUSTIFIED PROFESSIONAL POINTS) */}
+      <div className="bg-amber-50/90 border border-amber-200/90 rounded-2xl p-4 sm:p-6 space-y-3 shadow-xs">
+        <div className="flex items-center gap-2 border-b border-amber-200/70 pb-2.5">
+          <span className="text-base">📅</span>
+          <h3 className="text-xs sm:text-sm font-black text-amber-950">
+            Fixed Calendar Dates Share Pool Distribution Rules (5th, 15th &amp; 25th - Dubai Time)
+          </h3>
+        </div>
+
+        <div className="space-y-2.5 text-xs text-amber-950">
+          <div className="flex items-start gap-2.5">
+            <span className="text-amber-600 font-black text-sm leading-tight shrink-0">•</span>
+            <p className="text-justify leading-relaxed flex-1">
+              <strong className="text-amber-900 font-extrabold">Fixed Distribution Dates:</strong> Distribution DOES NOT start from user registration date. It takes place on fixed calendar dates: <strong className="text-amber-900 font-extrabold">5th, 15th, and 25th</strong> of every month at 23:59:59 GST (Dubai Time UTC+4).
+            </p>
+          </div>
+
+          <div className="flex items-start gap-2.5">
+            <span className="text-amber-600 font-black text-sm leading-tight shrink-0">•</span>
+            <p className="text-justify leading-relaxed flex-1">
+              <strong className="text-amber-900 font-extrabold">Accumulation:</strong> Every new $100 package registration or Sub-ID creation automatically adds <strong className="text-amber-900 font-extrabold">$30 USDT</strong> to the Share Pool.
+            </p>
+          </div>
+
+          <div className="flex items-start gap-2.5">
+            <span className="text-amber-600 font-black text-sm leading-tight shrink-0">•</span>
+            <p className="text-justify leading-relaxed flex-1">
+              <strong className="text-amber-900 font-extrabold">Proportional Shares:</strong> Distribution is divided based on your active Board Level share multiplier (Board 1 = 1x, Board 2 = 2x, Board 3 = 3x, Board 4 = 4x, Board 5 = 5x).
+            </p>
+          </div>
+
+          <div className="flex items-start gap-2.5">
+            <span className="text-amber-600 font-black text-sm leading-tight shrink-0">•</span>
+            <p className="text-justify leading-relaxed flex-1">
+              <strong className="text-amber-900 font-extrabold">How to Claim:</strong> On the cutoff date (or anytime after finalization), click <strong className="text-amber-900 font-extrabold">&quot;💰 Claim Share Income&quot;</strong> on your dashboard to receive your payouts directly into your connected Web3 USDT wallet.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* 📜 OFFICIAL SMART CONTRACT ADDRESS CARD (AT VERY BOTTOM - MOBILE FRIENDLY WITH COPY) */}
+      <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
+          <div className="flex items-center gap-2">
+            <span className="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg text-base border border-emerald-200 shrink-0">
+              ⚡
+            </span>
+            <div>
+              <h4 className="text-xs sm:text-sm font-black text-slate-900">
+                Official Smart Contract Address
+              </h4>
+              <p className="text-[11px] text-slate-500">
+                Verified on BNB Smart Chain Mainnet (BEP-20)
+              </p>
+            </div>
+          </div>
+          <span className="self-start sm:self-auto px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-2xs whitespace-nowrap">
+            BSC Mainnet Verified 🛡️
+          </span>
+        </div>
+
+        {/* Contract Address & Copy Button Row */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-0.5">
+          <div className="flex-1 bg-slate-50 border border-slate-200 px-3.5 py-2.5 rounded-xl text-xs font-mono font-bold text-slate-800 select-all break-all sm:truncate">
+            {CONTRACT_ADDRESSES.GROW50X_CORE}
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={handleCopyContract}
+              className={`flex-1 sm:flex-initial px-4 py-2.5 rounded-xl text-xs font-black transition-all shadow-xs flex items-center justify-center gap-1.5 active:scale-95 whitespace-nowrap ${
+                copiedContract
+                  ? 'bg-emerald-600 text-white shadow-emerald-500/20'
+                  : 'bg-slate-900 hover:bg-slate-800 text-white'
+              }`}
+            >
+              <span>{copiedContract ? '✓' : '📋'}</span>
+              <span>{copiedContract ? 'Copied!' : 'Copy Address'}</span>
+            </button>
+            <a
+              href={`${BSC_EXPLORER_URL}/address/${CONTRACT_ADDRESSES.GROW50X_CORE}`}
+              target="_blank"
+              rel="noreferrer"
+              className="px-3.5 py-2.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition-all flex items-center justify-center gap-1 shrink-0"
+              title="View on BSCScan Explorer"
+            >
+              <span>🔗</span>
+              <span className="hidden sm:inline">BSCScan</span>
+            </a>
+          </div>
+        </div>
       </div>
     </div>
   );
