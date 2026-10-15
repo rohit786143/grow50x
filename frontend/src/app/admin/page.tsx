@@ -112,6 +112,12 @@ function AdminAnalyticsContent() {
     positions: Array(7).fill({ pos: 0, label: '', id: null, rawId: 0, wallet: null, status: 'Available', sponsor: null, directs: 0, isSubId: false }),
   });
 
+  // Board Matrix Interactive Zoom State for Admin Inspection
+  const [adminZoomLevel, setAdminZoomLevel] = useState<number>(1);
+  const handleAdminZoomIn = () => setAdminZoomLevel((prev) => Math.min(1.3, Number((prev + 0.1).toFixed(1))));
+  const handleAdminZoomOut = () => setAdminZoomLevel((prev) => Math.max(0.6, Number((prev - 0.1).toFixed(1))));
+  const handleAdminZoomReset = () => setAdminZoomLevel(1);
+
   useEffect(() => {
     fetchProtocolState();
   }, []);
@@ -1173,23 +1179,73 @@ function AdminAnalyticsContent() {
               </div>
 
               {/* Right Side: Matrix Visualizer Canvas */}
-              <div className="lg:col-span-3 bg-white p-6 lg:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                  <div>
-                    <span className="text-xs font-bold text-slate-400 uppercase">Currently Inspecting Unit</span>
-                    <h3 className="text-xl font-black text-slate-900 mt-0.5">
-                      Board Unit #{inspectedBoardUnit.boardId} (Level {selectedBoardLevel})
+              <div className="lg:col-span-3 bg-white p-4 sm:p-6 lg:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-4 sm:space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-4 gap-3">
+                  <div className="space-y-1">
+                    <span className="text-[10px] sm:text-xs font-extrabold text-sky-600 uppercase tracking-wider block">
+                      Currently Inspecting Unit
+                    </span>
+                    <h3 className="text-lg sm:text-xl font-black text-slate-900 leading-tight">
+                      Board Unit #{inspectedBoardUnit.boardId} <span className="text-sky-600 font-extrabold text-sm sm:text-base">(Level {selectedBoardLevel})</span>
                     </h3>
                   </div>
-                  {inspectedBoardUnit.filledCount === 7 ? (
-                    <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-purple-100 text-purple-700 border border-purple-300">
-                      Completed 🏁
-                    </span>
-                  ) : (
-                    <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-100 text-emerald-700 border border-emerald-300">
-                      Active ({inspectedBoardUnit.filledCount}/7 Filled) ⚡
-                    </span>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {inspectedBoardUnit.filledCount === 7 ? (
+                      <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-purple-100 text-purple-700 border border-purple-300 shadow-2xs whitespace-nowrap">
+                        Completed (7/7) 🏁
+                      </span>
+                    ) : (
+                      <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-2xs whitespace-nowrap flex items-center gap-1">
+                        <span>⚡</span> Active ({inspectedBoardUnit.filledCount}/7 Filled)
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* 🔍 Interactive Zoom & Slide Controls Toolbar for Admin */}
+                <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-2.5 bg-slate-50 p-2.5 sm:px-4 sm:py-2 rounded-2xl border border-slate-200 text-xs shadow-2xs">
+                  <div className="flex items-center gap-1.5 text-slate-500 font-semibold text-[11px] sm:text-xs">
+                    <span className="text-sky-600 font-bold text-sm">↔️</span>
+                    <span>Slide left/right to explore all tree branches</span>
+                  </div>
+
+                  {/* Zoom Buttons Controls Group */}
+                  <div className="flex items-center gap-1.5 shrink-0 bg-white p-1 rounded-xl border border-slate-200 shadow-2xs">
+                    <button
+                      type="button"
+                      onClick={handleAdminZoomOut}
+                      disabled={adminZoomLevel <= 0.6}
+                      title="Zoom Out Matrix View"
+                      className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center font-black text-slate-700 hover:bg-slate-100 disabled:opacity-40 rounded-lg transition-all text-xs active:scale-95"
+                    >
+                      ➖
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleAdminZoomReset}
+                      title="Reset Zoom to 100%"
+                      className="px-2 h-7 sm:h-8 flex items-center justify-center font-mono font-black text-[11px] text-slate-800 hover:bg-slate-100 rounded-lg transition-all"
+                    >
+                      {Math.round(adminZoomLevel * 100)}%
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleAdminZoomIn}
+                      disabled={adminZoomLevel >= 1.3}
+                      title="Zoom In Matrix View"
+                      className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center font-black text-slate-700 hover:bg-slate-100 disabled:opacity-40 rounded-lg transition-all text-xs active:scale-95"
+                    >
+                      ➕
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAdminZoomLevel((prev) => (prev <= 0.7 ? 1 : 0.65))}
+                      title="Toggle Mobile Fit to Screen View"
+                      className="px-2.5 h-7 sm:h-8 flex items-center justify-center font-bold text-[10px] sm:text-[11px] text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-200 rounded-lg transition-all whitespace-nowrap ml-0.5"
+                    >
+                      {adminZoomLevel <= 0.7 ? '100% View' : '📱 Fit Screen'}
+                    </button>
+                  </div>
                 </div>
 
                 {boardDetailsLoading ? (
@@ -1197,36 +1253,56 @@ function AdminAnalyticsContent() {
                     <span>🔄</span> Loading Board Matrix Positions...
                   </div>
                 ) : (
-                  /* Pyramidal 7-Position Matrix Tree Canvas */
-                  <div className="flex flex-col items-center w-full max-w-4xl space-y-6 mx-auto pt-2">
-                    {/* Level 1: Position 1 (Top Root Node) */}
-                    <div className="flex flex-col items-center w-full max-w-xs">
-                      <AdminMatrixNode item={inspectedBoardUnit.positions[0]} isTop />
-                      <div className="w-0.5 h-6 bg-slate-300" />
-                    </div>
+                  /* Pyramidal 7-Position Matrix Tree Viewport (Horizontal Slideable & Zoomable) */
+                  <div className="w-full overflow-x-auto overflow-y-visible pb-6 pt-2 px-1 scrollbar-thin scrollbar-thumb-slate-300 touch-pan-x cursor-grab active:cursor-grabbing border-b border-slate-100">
+                    <div
+                      style={{
+                        transform: `scale(${adminZoomLevel})`,
+                        transformOrigin: 'top center',
+                        transition: 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                        minWidth: '680px',
+                        marginBottom: adminZoomLevel < 1 ? `-${Math.round((1 - adminZoomLevel) * 380)}px` : '0px',
+                      }}
+                      className="flex flex-col items-center mx-auto"
+                    >
+                      {/* Level 1: Position 1 (Top Root Node) */}
+                      <div className="flex flex-col items-center w-full max-w-xs">
+                        <AdminMatrixNode item={inspectedBoardUnit.positions[0]} isTop />
+                        <div className="w-0.5 h-6 bg-slate-300" />
+                      </div>
 
-                    {/* Level 2: Positions 2 & 3 */}
-                    <div className="flex flex-col items-center w-full max-w-2xl">
-                      <div className="w-1/2 h-0.5 bg-slate-300" />
-                      <div className="grid grid-cols-2 gap-6 md:gap-12 w-full pt-2">
-                        <div className="flex flex-col items-center">
-                          <AdminMatrixNode item={inspectedBoardUnit.positions[1]} />
-                          <div className="w-0.5 h-6 bg-slate-300" />
-                        </div>
-                        <div className="flex flex-col items-center">
-                          <AdminMatrixNode item={inspectedBoardUnit.positions[2]} />
-                          <div className="w-0.5 h-6 bg-slate-300" />
+                      {/* Level 2: Positions 2 & 3 */}
+                      <div className="flex flex-col items-center w-full max-w-xl">
+                        <div className="w-1/2 h-0.5 bg-slate-300" />
+                        <div className="grid grid-cols-2 gap-8 w-full pt-2">
+                          <div className="flex flex-col items-center">
+                            <AdminMatrixNode item={inspectedBoardUnit.positions[1]} />
+                            <div className="w-0.5 h-6 bg-slate-300" />
+                          </div>
+                          <div className="flex flex-col items-center">
+                            <AdminMatrixNode item={inspectedBoardUnit.positions[2]} />
+                            <div className="w-0.5 h-6 bg-slate-300" />
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Level 3: Positions 4, 5, 6, 7 */}
-                    <div className="w-full">
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full">
-                        <AdminMatrixNode item={inspectedBoardUnit.positions[3]} />
-                        <AdminMatrixNode item={inspectedBoardUnit.positions[4]} />
-                        <AdminMatrixNode item={inspectedBoardUnit.positions[5]} />
-                        <AdminMatrixNode item={inspectedBoardUnit.positions[6]} />
+                      {/* Level 3: Positions 4, 5, 6, 7 (True 4-column Pyramid Base) */}
+                      <div className="w-full max-w-2xl">
+                        <div className="w-full h-0.5 bg-slate-300" />
+                        <div className="grid grid-cols-4 gap-3 w-full pt-2">
+                          <div className="flex flex-col items-center">
+                            <AdminMatrixNode item={inspectedBoardUnit.positions[3]} />
+                          </div>
+                          <div className="flex flex-col items-center">
+                            <AdminMatrixNode item={inspectedBoardUnit.positions[4]} />
+                          </div>
+                          <div className="flex flex-col items-center">
+                            <AdminMatrixNode item={inspectedBoardUnit.positions[5]} />
+                          </div>
+                          <div className="flex flex-col items-center">
+                            <AdminMatrixNode item={inspectedBoardUnit.positions[6]} />
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1335,7 +1411,7 @@ function AdminMatrixNode({ item, isTop = false }: { item: any; isTop?: boolean }
 
   return (
     <div
-      className={`p-4 rounded-2xl border text-center transition-all duration-300 w-full relative ${
+      className={`p-3 sm:p-4 rounded-2xl border text-center transition-all duration-300 w-full min-w-[140px] relative ${
         isTop
           ? 'border-sky-500 bg-gradient-to-b from-sky-50 to-white shadow-md shadow-sky-500/10 ring-2 ring-sky-400/20'
           : isOccupied

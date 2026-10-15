@@ -468,20 +468,13 @@ function DashboardContent() {
       <div className="bg-slate-900 text-white p-3.5 sm:px-5 sm:py-3 rounded-2xl border border-slate-800 shadow-md relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
         <div className="absolute top-0 right-0 w-64 h-64 bg-sky-500/10 rounded-full blur-xl -z-0 pointer-events-none" />
 
-        {/* Left / Top Row on Mobile: Next Cutoff + Live Countdown Timer */}
-        <div className="flex flex-wrap items-center justify-between sm:justify-start gap-2 relative z-10 min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="animate-pulse flex h-2.5 w-2.5 rounded-full bg-emerald-400 shrink-0" />
-            <div className="flex flex-col sm:flex-row sm:items-center sm:gap-1.5">
-              <span className="text-slate-400 font-semibold text-[11px] sm:text-xs">Next Cutoff:</span>
-              <span className="text-emerald-400 font-extrabold text-xs">
-                {nextCutoffDateStr || 'Calculating...'}
-              </span>
-            </div>
-          </div>
+        {/* Left / Top Row: Next Cutoff + Live Countdown Timer */}
+        <div className="flex items-center gap-2 relative z-10 min-w-0">
+          <span className="animate-pulse flex h-2.5 w-2.5 rounded-full bg-emerald-400 shrink-0" />
+          <span className="text-slate-300 font-bold text-xs whitespace-nowrap">Next Cutoff:</span>
 
-          {/* Live Countdown Timer Badge */}
-          <div className="flex items-center gap-1 font-mono text-[11px] sm:text-xs font-bold bg-slate-800/95 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl border border-slate-700/80 shadow-inner shrink-0">
+          {/* Live Countdown Timer Badge right next to Next Cutoff */}
+          <div className="flex items-center gap-1 font-mono text-xs font-black bg-slate-800/95 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl border border-slate-700/80 shadow-inner shrink-0">
             <span className="text-sky-400">{String(timeLeft.days).padStart(2, '0')}d</span>
             <span className="text-slate-500">:</span>
             <span className="text-sky-400">{String(timeLeft.hours).padStart(2, '0')}h</span>
@@ -533,15 +526,10 @@ function DashboardContent() {
           <span className="text-[10px] font-bold text-sky-600 uppercase tracking-wider leading-none">
             Live Account Telemetry ({ghostTargetId > 0 ? 'Admin Ghost Inspection' : isSubIdSelected ? 'Sub-ID Active' : 'Main ID Active'})
           </span>
-          <div className="flex flex-wrap items-baseline gap-2 mt-1">
+          <div className="mt-1">
             <h1 className="text-xl sm:text-2xl font-black text-slate-900 leading-tight">
               Account ID: <span className="gradient-text-blue">{displayId}</span>
             </h1>
-            {account && (
-              <span className="text-[11px] font-mono text-slate-400 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200">
-                {account.slice(0, 6)}...{account.slice(-4)}
-              </span>
-            )}
           </div>
         </div>
 
