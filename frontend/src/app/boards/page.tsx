@@ -153,6 +153,11 @@ function BoardsContent() {
   } | null>(null);
   const [showCompletedTreeAnyway, setShowCompletedTreeAnyway] = useState<boolean>(false);
   const [isTopNodeOnHold, setIsTopNodeOnHold] = useState<boolean>(false);
+  const [zoomLevel, setZoomLevel] = useState<number>(1);
+
+  const handleZoomIn = () => setZoomLevel((prev) => Math.min(1.3, Number((prev + 0.15).toFixed(2))));
+  const handleZoomOut = () => setZoomLevel((prev) => Math.max(0.6, Number((prev - 0.15).toFixed(2))));
+  const handleZoomReset = () => setZoomLevel(1);
 
   const [boardUnit, setBoardUnit] = useState<any>({
     boardId: 1001,
@@ -611,62 +616,120 @@ function BoardsContent() {
               </div>
             )}
 
-            {/* Header Badge & Title */}
-            <div className="text-center mb-8 space-y-2">
-              <div className="flex items-center justify-center gap-2">
-                <span className="text-xs font-black text-sky-600 uppercase tracking-widest font-mono">
-                  BOARD UNIT #{boardUnit.boardId}
+            {/* Header Badges & Title (Mobile & Desktop Optimized) */}
+            <div className="text-center mb-5 sm:mb-6 space-y-2.5 w-full">
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <span className="px-3 py-1 rounded-full text-xs font-black text-sky-700 bg-sky-50 border border-sky-200 uppercase tracking-wider font-mono shadow-2xs whitespace-nowrap">
+                  Unit #{boardUnit.boardId}
                 </span>
                 {boardUnit.boardId === userActiveBoardId && (
-                  <span className="px-3 py-0.5 rounded-full text-xs font-extrabold bg-sky-100 text-sky-700 border border-sky-300">
-                    ⭐ MY ACTIVE BOARD
+                  <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-amber-50 text-amber-800 border border-amber-300 shadow-2xs whitespace-nowrap flex items-center gap-1">
+                    <span>⭐</span> My Active Board
                   </span>
                 )}
                 {boardUnit.filledCount === 7 ? (
-                  <span className="px-3 py-0.5 rounded-full text-xs font-extrabold bg-purple-100 text-purple-700 border border-purple-300">
-                    Completed 🏁
+                  <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-purple-100 text-purple-700 border border-purple-300 shadow-2xs whitespace-nowrap">
+                    Completed (7/7) 🏁
                   </span>
                 ) : (
-                  <span className="px-3 py-0.5 rounded-full text-xs font-extrabold bg-emerald-100 text-emerald-700 border border-emerald-300">
-                    Active ({boardUnit.filledCount}/7 Filled) ⚡
+                  <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-2xs whitespace-nowrap flex items-center gap-1">
+                    <span>⚡</span> Active ({boardUnit.filledCount}/7 Filled)
                   </span>
                 )}
               </div>
-              <h1 className="text-3xl font-black text-slate-900 tracking-tight">
+
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-slate-900 tracking-tight px-2 leading-tight">
                 {boardNames[boardUnit.boardLevel - 1]} Matrix
               </h1>
             </div>
 
-            {/* Pyramidal 7-Position Matrix Tree */}
-            <div className="flex flex-col items-center w-full max-w-4xl space-y-6">
-              {/* Level 1: Position 1 (Top Root Node) */}
-              <div className="flex flex-col items-center w-full max-w-xs">
-                <MatrixNode item={boardUnit.positions[0]} isTop />
-                <div className="w-0.5 h-6 bg-slate-300" />
+            {/* 🔍 Interactive Zoom & Slide Controls Toolbar */}
+            <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-2.5 bg-slate-50 p-2.5 sm:px-4 sm:py-2 rounded-2xl border border-slate-200 mb-5 text-xs shadow-2xs">
+              <div className="flex items-center gap-1.5 text-slate-500 font-semibold text-[11px] sm:text-xs">
+                <span className="text-sky-600 font-bold text-sm">↔️</span>
+                <span>Slide left/right to explore all tree branches</span>
               </div>
 
-              {/* Level 2: Positions 2 & 3 */}
-              <div className="flex flex-col items-center w-full max-w-2xl">
-                <div className="w-1/2 h-0.5 bg-slate-300" />
-                <div className="grid grid-cols-2 gap-6 md:gap-12 w-full pt-2">
-                  <div className="flex flex-col items-center">
-                    <MatrixNode item={boardUnit.positions[1]} />
-                    <div className="w-0.5 h-6 bg-slate-300" />
-                  </div>
-                  <div className="flex flex-col items-center">
-                    <MatrixNode item={boardUnit.positions[2]} />
-                    <div className="w-0.5 h-6 bg-slate-300" />
+              {/* Zoom Buttons Controls Group */}
+              <div className="flex items-center gap-1.5 shrink-0 bg-white p-1 rounded-xl border border-slate-200 shadow-2xs">
+                <button
+                  type="button"
+                  onClick={handleZoomOut}
+                  disabled={zoomLevel <= 0.6}
+                  title="Zoom Out Matrix View"
+                  className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center font-black text-slate-700 hover:bg-slate-100 disabled:opacity-40 rounded-lg transition-all text-xs active:scale-95"
+                >
+                  ➖
+                </button>
+                <button
+                  type="button"
+                  onClick={handleZoomReset}
+                  title="Reset Zoom to 100%"
+                  className="px-2 h-7 sm:h-8 flex items-center justify-center font-mono font-black text-[11px] text-slate-800 hover:bg-slate-100 rounded-lg transition-all"
+                >
+                  {Math.round(zoomLevel * 100)}%
+                </button>
+                <button
+                  type="button"
+                  onClick={handleZoomIn}
+                  disabled={zoomLevel >= 1.3}
+                  title="Zoom In Matrix View"
+                  className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center font-black text-slate-700 hover:bg-slate-100 disabled:opacity-40 rounded-lg transition-all text-xs active:scale-95"
+                >
+                  ➕
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setZoomLevel((prev) => (prev <= 0.7 ? 1 : 0.65))}
+                  title="Toggle Mobile Fit to Screen View"
+                  className="px-2.5 h-7 sm:h-8 flex items-center justify-center font-bold text-[10px] sm:text-[11px] text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-200 rounded-lg transition-all whitespace-nowrap ml-0.5"
+                >
+                  {zoomLevel <= 0.7 ? '100% View' : '📱 Fit Screen'}
+                </button>
+              </div>
+            </div>
+
+            {/* 🌳 Pyramidal 7-Position Matrix Tree Viewport (Horizontal Slideable & Zoomable) */}
+            <div className="w-full overflow-x-auto overflow-y-visible pb-6 pt-2 px-1 scrollbar-thin scrollbar-thumb-slate-300 touch-pan-x cursor-grab active:cursor-grabbing border-b border-slate-100">
+              <div
+                style={{
+                  transform: `scale(${zoomLevel})`,
+                  transformOrigin: 'top center',
+                  transition: 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                  minWidth: '680px',
+                  marginBottom: zoomLevel < 1 ? `-${Math.round((1 - zoomLevel) * 380)}px` : '0px',
+                }}
+                className="flex flex-col items-center mx-auto"
+              >
+                {/* Level 1: Position 1 (Top Root Node) */}
+                <div className="flex flex-col items-center w-full max-w-xs">
+                  <MatrixNode item={boardUnit.positions[0]} isTop />
+                  <div className="w-0.5 h-6 bg-slate-300" />
+                </div>
+
+                {/* Level 2: Positions 2 & 3 */}
+                <div className="flex flex-col items-center w-full max-w-xl">
+                  <div className="w-1/2 h-0.5 bg-slate-300" />
+                  <div className="grid grid-cols-2 gap-8 w-full pt-2">
+                    <div className="flex flex-col items-center">
+                      <MatrixNode item={boardUnit.positions[1]} />
+                      <div className="w-0.5 h-6 bg-slate-300" />
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <MatrixNode item={boardUnit.positions[2]} />
+                      <div className="w-0.5 h-6 bg-slate-300" />
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Level 3: Positions 4, 5, 6, 7 */}
-              <div className="w-full">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full">
-                  <MatrixNode item={boardUnit.positions[3]} />
-                  <MatrixNode item={boardUnit.positions[4]} />
-                  <MatrixNode item={boardUnit.positions[5]} />
-                  <MatrixNode item={boardUnit.positions[6]} />
+                {/* Level 3: Positions 4, 5, 6, 7 (True 4-Column Tree Hierarchy) */}
+                <div className="w-full max-w-4xl">
+                  <div className="grid grid-cols-4 gap-3 w-full">
+                    <MatrixNode item={boardUnit.positions[3]} />
+                    <MatrixNode item={boardUnit.positions[4]} />
+                    <MatrixNode item={boardUnit.positions[5]} />
+                    <MatrixNode item={boardUnit.positions[6]} />
+                  </div>
                 </div>
               </div>
             </div>
@@ -683,7 +746,7 @@ function MatrixNode({ item, isTop = false }: { item: any; isTop?: boolean }) {
 
   return (
     <div
-      className={`p-4 rounded-2xl border text-center transition-all duration-300 w-full relative ${
+      className={`p-3 sm:p-4 rounded-2xl border text-center transition-all duration-300 w-full relative min-w-[140px] ${
         isTop
           ? 'border-sky-500 bg-gradient-to-b from-sky-50 to-white shadow-md shadow-sky-500/10 ring-2 ring-sky-400/20'
           : isOccupied
@@ -705,14 +768,14 @@ function MatrixNode({ item, isTop = false }: { item: any; isTop?: boolean }) {
             )}
           </div>
           <p className="text-[11px] font-mono text-sky-600 mt-0.5">{item.wallet}</p>
-          <div className="flex flex-wrap items-center justify-center gap-1.5 mt-2">
-            <span className="px-2 py-0.5 text-[10px] font-extrabold bg-emerald-100 text-emerald-700 border border-emerald-300 rounded-full">
+          <div className="flex flex-wrap items-center justify-center gap-1 mt-2">
+            <span className="px-2 py-0.5 text-[9px] sm:text-[10px] font-extrabold bg-emerald-100 text-emerald-700 border border-emerald-300 rounded-full whitespace-nowrap">
               Occupied
             </span>
-            <span className="px-2 py-0.5 text-[10px] font-extrabold bg-slate-100 text-slate-700 border border-slate-200 rounded-full">
+            <span className="px-2 py-0.5 text-[9px] sm:text-[10px] font-extrabold bg-slate-100 text-slate-700 border border-slate-200 rounded-full whitespace-nowrap">
               {item.directs} Directs
             </span>
-            <span className="px-2 py-0.5 text-[10px] font-extrabold bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-full">
+            <span className="px-2 py-0.5 text-[9px] sm:text-[10px] font-extrabold bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-full whitespace-nowrap">
               {item.downline || 0} Downline
             </span>
           </div>
