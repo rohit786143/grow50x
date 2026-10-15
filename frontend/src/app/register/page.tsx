@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { CONTRACT_ADDRESSES, GROW50X_CORE_ABI, MOCK_USDT_ABI, isAdminWallet, getAdminIndex, ensureBscChain } from '../../config/contracts';
 import { useWeb3 } from '../../context/Web3Context';
 import { validatePlacementEligibility } from '../../utils/placementValidation';
+import { findSmartPlacementParentId } from '../../utils/placementRouting';
 
 export default function RegisterPage() {
   return (
@@ -251,6 +252,7 @@ function RegisterFormContent() {
 
       const sponsorIdNum = count === 0 ? 0 : (parseInt(cleanSponsor) || 0);
       const placementIdNum = parseInt(cleanPlacement) || 0;
+      let finalPlacementId = placementIdNum;
 
       if (count > 0) {
         if (sponsorIdNum <= 0) {
@@ -275,7 +277,7 @@ function RegisterFormContent() {
           return;
         }
 
-        // Validate Placement ID eligibility if specified
+        // Validate Placement ID eligibility if specified or run Smart Auto-Routing
         if (placementIdNum > 0) {
           const valRes = await validatePlacementEligibility(placementIdNum);
           if (!valRes.isEligible) {
@@ -283,6 +285,19 @@ function RegisterFormContent() {
             setIsSubmitting(false);
             setStatusMessage(`❌ Not Eligible for placement Id.`);
             return;
+          }
+        } else {
+          // Frontend Smart Auto-Routing: 1st Preference Sponsor Board, 2nd Preference Oldest Active Board
+          setStatusMessage('🔍 Finding optimal placement (Sponsor First, then Oldest Active Board)...');
+          try {
+            const smartPlacement = await findSmartPlacementParentId(coreContract, sponsorIdNum);
+            if (smartPlacement.placementParentId > 0) {
+              finalPlacementId = smartPlacement.placementParentId;
+              console.log('Smart Auto-Routing result:', smartPlacement);
+              setStatusMessage(`⚡ Smart Auto-Routing: Placing in Board #${smartPlacement.boardId} under GR${finalPlacementId} (${smartPlacement.slotName})...`);
+            }
+          } catch (routingErr) {
+            console.warn('Smart placement routing fallback:', routingErr);
           }
         }
       }
@@ -292,7 +307,7 @@ function RegisterFormContent() {
       
       let gasLimit: bigint;
       try {
-        const estGas = await coreContract.registerMainUser.estimateGas(sponsorIdNum, placementIdNum);
+        const estGas = await coreContract.registerMainUser.estimateGas(sponsorIdNum, finalPlacementId);
         gasLimit = (estGas * BigInt(115)) / BigInt(100);
         if (gasLimit < BigInt(320000)) {
           gasLimit = BigInt(320000);
@@ -302,7 +317,7 @@ function RegisterFormContent() {
         gasLimit = BigInt(450000);
       }
 
-      const regTx = await coreContract.registerMainUser(sponsorIdNum, placementIdNum, { gasLimit });
+      const regTx = await coreContract.registerMainUser(sponsorIdNum, finalPlacementId, { gasLimit });
 
       setStatusMessage('⏳ Finalizing Registration on BNB Smart Chain blockchain...');
       console.log('Register TX:', regTx.hash);
@@ -455,7 +470,7 @@ function RegisterFormContent() {
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide">
-                      Placement ID <span className="text-slate-400 font-normal">(Optional)</span>
+                      Placement ID <span className="text-slate-400 font-normal">(Optional for Auto)</span>
                     </label>
                     {placementStatus.isChecking ? (
                       <span className="text-[10px] font-bold text-sky-600 bg-sky-50 px-2 py-0.5 rounded-full animate-pulse border border-sky-200">
@@ -469,7 +484,11 @@ function RegisterFormContent() {
                       }`}>
                         {placementStatus.isEligible ? '✓ Eligible' : '❌ Not Eligible for placement Id'}
                       </span>
-                    ) : null}
+                    ) : (
+                      <span className="text-[10px] font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded-full border border-sky-200">
+                        ⚡ Smart Auto
+                      </span>
+                    )}
                   </div>
                   <input
                     type="text"
@@ -494,7 +513,7 @@ function RegisterFormContent() {
                       <span>{placementStatus.message}</span>
                     </div>
                   ) : (
-                    <p className="text-[11px] text-slate-500 mt-1">Leave blank or 0 for protocol automatic TOP → BOTTOM, LEFT → RIGHT placement.</p>
+                    <p className="text-[11px] text-slate-500 mt-1">Leave blank or 0 for Smart Auto-Placement (1st Preference: Sponsor Board, 2nd: Oldest Active Board).</p>
                   )}
                 </div>
               </>

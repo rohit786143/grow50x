@@ -6,6 +6,7 @@ import { ethers } from 'ethers';
 import { CONTRACT_ADDRESSES, GROW50X_CORE_ABI, MOCK_USDT_ABI, ensureBscChain } from '../../config/contracts';
 import { useWeb3 } from '../../context/Web3Context';
 import { validatePlacementEligibility } from '../../utils/placementValidation';
+import { findSmartPlacementParentId } from '../../utils/placementRouting';
 
 export default function SubIdsPage() {
   const { chainId } = useWeb3();
@@ -31,6 +32,29 @@ export default function SubIdsPage() {
 
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [statusMessage, setStatusMessage] = useState<string>('');
+  const [isAutoDetecting, setIsAutoDetecting] = useState<boolean>(false);
+
+  const handleAutoDetectPlacement = async () => {
+    if (typeof window === 'undefined' || !(window as any).ethereum) return;
+    setIsAutoDetecting(true);
+    setStatusMessage('🔍 Auto-detecting eligible placement parent...');
+    try {
+      await ensureBscChain();
+      const provider = new ethers.BrowserProvider((window as any).ethereum);
+      const coreContract = new ethers.Contract(CONTRACT_ADDRESSES.GROW50X_CORE, GROW50X_CORE_ABI, provider);
+      const res = await findSmartPlacementParentId(coreContract, manualSponsorId);
+      if (res.placementParentId > 0) {
+        setManualPlacementId(res.placementParentId.toString());
+        setStatusMessage(`⚡ ${res.message}`);
+      } else {
+        alert('No open placement slot found in any active Board 1 unit.');
+      }
+    } catch (e: any) {
+      console.warn('Auto detect error:', e);
+    } finally {
+      setIsAutoDetecting(false);
+    }
+  };
 
   // Real-time Placement ID Eligibility Check
   useEffect(() => {
@@ -257,13 +281,11 @@ export default function SubIdsPage() {
       return;
     }
 
-    // Compulsory Placement ID Validation
-    if (!manualPlacementId || manualPlacementId.trim() === '' || Number(manualPlacementId) <= 0) {
-      alert('Placement Parent ID is COMPULSORY! Please specify a valid Placement ID.');
-      return;
-    }
+    const cleanPlacement = manualPlacementId.replace(/^GR/i, '').trim();
+    let pId = parseInt(cleanPlacement) || 0;
 
-    if (!placementStatus.isEligible) {
+    // If user provided a manual placement ID, validate it
+    if (pId > 0 && !placementStatus.isEligible) {
       alert(`❌ Not Eligible for placement Id! ${placementStatus.message}`);
       return;
     }
@@ -303,68 +325,81 @@ export default function SubIdsPage() {
         }
       }
 
-      const pId = Number(manualPlacementId);
-
-      // Pre-validate Placement Parent ID against the 3 placement rules
-      try {
-        const pUserData = await coreContract.users(pId);
-        if (!pUserData.active) {
-          alert(`Placement Parent ID GR${pId} does not exist or is inactive!`);
+      // Determine Placement Parent ID (Smart Auto-Placement vs Manual)
+      if (pId <= 0) {
+        // Smart Auto-Placement: Route to Sponsor Board (1st Preference) or Oldest Active Board (2nd Preference)
+        setStatusMessage('🔍 Finding optimal placement parent (Sponsor First, then Oldest Active Board)...');
+        const smartPlacement = await findSmartPlacementParentId(coreContract, manualSponsorId);
+        if (smartPlacement.placementParentId <= 0) {
+          alert('❌ No open placement slot found in any active Board 1 unit.');
           setIsSubmitting(false);
           return;
         }
-
-        const pActiveBoardId = Number(await coreContract.userActiveBoardUnit(pId));
-        if (pActiveBoardId === 0) {
-          alert(`Placement Parent ID GR${pId} has no active board unit!`);
-          setIsSubmitting(false);
-          return;
-        }
-
-        const boardPositions = await coreContract.getBoardUnitPositions(pActiveBoardId);
-        const boardLevel = pActiveBoardId >= 1000 ? Math.floor(pActiveBoardId / 1000) : 1;
-
-        if (boardLevel > 1) {
-          alert(`Manual placement is strictly ONLY allowed in Board Level 1! Placement Parent GR${pId} is in Board Level ${boardLevel}.`);
-          setIsSubmitting(false);
-          return;
-        }
-
-        let parentSlot = -1;
-        for (let i = 0; i < 7; i++) {
-          if (Number(boardPositions[i]) === pId) {
-            parentSlot = i;
-            break;
-          }
-        }
-
-        if (parentSlot >= 3) {
-          alert(`Cannot use bottom row position (Pos 4-7) as placement parent! Placement Parent GR${pId} is currently in Position ${parentSlot + 1}.`);
-          setIsSubmitting(false);
-          return;
-        }
-
-        if (parentSlot === 0) {
-          if (Number(boardPositions[1]) > 0 && Number(boardPositions[2]) > 0) {
-            alert(`Placement Parent GR${pId} already has 2 direct placement children filled! Please choose another placement parent.`);
+        pId = smartPlacement.placementParentId;
+        console.log('Smart Auto-Routing Sub-ID result:', smartPlacement);
+        setStatusMessage(`⚡ Smart Auto-Routing: Placing in Board #${smartPlacement.boardId} under GR${pId} (${smartPlacement.slotName})...`);
+      } else {
+        // Pre-validate Placement Parent ID against the 3 placement rules
+        try {
+          const pUserData = await coreContract.users(pId);
+          if (!pUserData.active) {
+            alert(`Placement Parent ID GR${pId} does not exist or is inactive!`);
             setIsSubmitting(false);
             return;
           }
-        } else if (parentSlot === 1) {
-          if (Number(boardPositions[3]) > 0 && Number(boardPositions[4]) > 0) {
-            alert(`Placement Parent GR${pId} already has 2 direct placement children filled! Please choose another placement parent.`);
+
+          const pActiveBoardId = Number(await coreContract.userActiveBoardUnit(pId));
+          if (pActiveBoardId === 0) {
+            alert(`Placement Parent ID GR${pId} has no active board unit!`);
             setIsSubmitting(false);
             return;
           }
-        } else if (parentSlot === 2) {
-          if (Number(boardPositions[5]) > 0 && Number(boardPositions[6]) > 0) {
-            alert(`Placement Parent GR${pId} already has 2 direct placement children filled! Please choose another placement parent.`);
+
+          const boardPositions = await coreContract.getBoardUnitPositions(pActiveBoardId);
+          const boardLevel = pActiveBoardId >= 1000 ? Math.floor(pActiveBoardId / 1000) : 1;
+
+          if (boardLevel > 1) {
+            alert(`Manual placement is strictly ONLY allowed in Board Level 1! Placement Parent GR${pId} is in Board Level ${boardLevel}.`);
             setIsSubmitting(false);
             return;
           }
+
+          let parentSlot = -1;
+          for (let i = 0; i < 7; i++) {
+            if (Number(boardPositions[i]) === pId) {
+              parentSlot = i;
+              break;
+            }
+          }
+
+          if (parentSlot >= 3) {
+            alert(`Cannot use bottom row position (Pos 4-7) as placement parent! Placement Parent GR${pId} is currently in Position ${parentSlot + 1}.`);
+            setIsSubmitting(false);
+            return;
+          }
+
+          if (parentSlot === 0) {
+            if (Number(boardPositions[1]) > 0 && Number(boardPositions[2]) > 0) {
+              alert(`Placement Parent GR${pId} already has 2 direct placement children filled! Please choose another placement parent.`);
+              setIsSubmitting(false);
+              return;
+            }
+          } else if (parentSlot === 1) {
+            if (Number(boardPositions[3]) > 0 && Number(boardPositions[4]) > 0) {
+              alert(`Placement Parent GR${pId} already has 2 direct placement children filled! Please choose another placement parent.`);
+              setIsSubmitting(false);
+              return;
+            }
+          } else if (parentSlot === 2) {
+            if (Number(boardPositions[5]) > 0 && Number(boardPositions[6]) > 0) {
+              alert(`Placement Parent GR${pId} already has 2 direct placement children filled! Please choose another placement parent.`);
+              setIsSubmitting(false);
+              return;
+            }
+          }
+        } catch (e) {
+          console.warn('Pre-validation notice:', e);
         }
-      } catch (e) {
-        console.warn('Pre-validation notice:', e);
       }
 
       setStatusMessage(`Creating Sub-ID under Sponsor ID GR${manualSponsorId} and Placement ID #${pId}...`);
@@ -525,39 +560,48 @@ export default function SubIdsPage() {
               </p>
             </div>
 
-            {/* Step 2: Placement Parent ID (Compulsory) */}
+            {/* Step 2: Placement Parent ID (Optional for Smart Auto Placement) */}
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider">
-                  2. Placement Parent ID <span className="text-rose-500 font-bold">* COMPULSORY</span>
+                  2. Placement Parent ID <span className="text-slate-400 font-normal">(Optional for Auto)</span>
                 </label>
-                {placementStatus.isChecking ? (
-                  <span className="text-[10px] font-bold text-sky-600 bg-sky-50 px-2 py-0.5 rounded-full animate-pulse border border-sky-200">
-                    ⏳ Checking Eligibility...
-                  </span>
-                ) : manualPlacementId.trim() ? (
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                    placementStatus.isEligible 
-                      ? 'text-emerald-700 bg-emerald-50 border-emerald-300' 
-                      : 'text-rose-700 bg-rose-50 border-rose-300'
-                  }`}>
-                    {placementStatus.isEligible ? '✓ Eligible' : '❌ Not Eligible for placement Id'}
-                  </span>
-                ) : (
-                  <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
-                    Required
-                  </span>
-                )}
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={handleAutoDetectPlacement}
+                    disabled={isAutoDetecting || isSubmitting}
+                    className="text-[10px] font-black text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-2.5 py-0.5 rounded-full transition-all flex items-center gap-1 shadow-sm cursor-pointer"
+                  >
+                    <span>⚡</span>
+                    <span>{isAutoDetecting ? 'Detecting...' : 'Auto Detect'}</span>
+                  </button>
+                  {placementStatus.isChecking ? (
+                    <span className="text-[10px] font-bold text-sky-600 bg-sky-50 px-2 py-0.5 rounded-full animate-pulse border border-sky-200">
+                      ⏳ Checking...
+                    </span>
+                  ) : manualPlacementId.trim() && manualPlacementId.trim() !== '0' ? (
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                      placementStatus.isEligible 
+                        ? 'text-emerald-700 bg-emerald-50 border-emerald-300' 
+                        : 'text-rose-700 bg-rose-50 border-rose-300'
+                    }`}>
+                      {placementStatus.isEligible ? '✓ Eligible' : '❌ Not Eligible'}
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded-full border border-sky-200">
+                      ⚡ Smart Auto
+                    </span>
+                  )}
+                </div>
               </div>
               <input
-                type="number"
-                required
-                min={1}
+                type="text"
                 value={manualPlacementId}
-                onChange={(e) => setManualPlacementId(e.target.value)}
-                placeholder="Enter target Placement Parent ID (e.g. 1)..."
+                onChange={(e) => setManualPlacementId(e.target.value.toUpperCase())}
+                placeholder="Leave blank or 0 for Smart Auto-Placement..."
                 className={`w-full bg-slate-50 border rounded-2xl px-4 py-3 text-sm font-mono font-bold text-slate-900 focus:outline-none transition-all shadow-sm ${
-                  manualPlacementId.trim()
+                  manualPlacementId.trim() && manualPlacementId.trim() !== '0'
                     ? placementStatus.isEligible
                       ? 'border-emerald-400 focus:border-emerald-500 bg-emerald-50/20'
                       : 'border-rose-400 focus:border-rose-500 bg-rose-50/20'
@@ -574,8 +618,8 @@ export default function SubIdsPage() {
                   <span>{placementStatus.message}</span>
                 </div>
               ) : (
-                <p className="text-[11px] text-slate-400 mt-1">
-                  Enter the numeric Placement ID where this Sub-ID will be placed in the 7-position board tree.
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Leave blank or 0 for Smart Auto-Placement (1st Preference: Sponsor Board, 2nd: Oldest Active Board). Or click "Auto Detect" to preview.
                 </p>
               )}
             </div>
