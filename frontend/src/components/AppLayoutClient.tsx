@@ -110,8 +110,8 @@ export default function AppLayoutClient({ children }: { children: React.ReactNod
         </div>
       </header>
 
-      {/* Main Body Container with Enhanced Top Padding for Fixed Header (Guarantees top cards are never covered) */}
-      <div className={`${isHomePage ? 'pt-16 sm:pt-20' : 'pt-20 sm:pt-24'} flex-1 flex flex-col min-h-screen relative z-10`}>
+      {/* Main Body Container with Compact Header Padding (Header is fixed ~50-60px) */}
+      <div className={`${isHomePage ? 'pt-16 sm:pt-20' : 'pt-14 sm:pt-16'} flex-1 flex flex-col min-h-screen relative z-10`}>
         <NetworkBanner />
 
         {/* Conditional Layout: Full width on Home Landing Page, Sidebar on Inner App Pages */}
@@ -126,7 +126,7 @@ export default function AppLayoutClient({ children }: { children: React.ReactNod
               onCloseMobile={() => setIsMobileMenuOpen(false)}
             />
             {/* Main content viewport without nested overflow-y trap so window scrolls cleanly */}
-            <main className="flex-1 p-3 sm:p-6 lg:p-8 w-full min-w-0 relative z-10">
+            <main className="flex-1 px-3 sm:px-6 lg:px-8 pt-1.5 sm:pt-2.5 pb-6 sm:pb-8 w-full min-w-0 relative z-10">
               {children}
             </main>
           </div>

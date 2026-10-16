@@ -490,7 +490,7 @@ function DashboardContent() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 -mt-1 sm:-mt-2">
       {/* 👻 ADMIN GHOST MODE ALERT BANNER */}
       {ghostTargetId > 0 && (
         <div className="bg-gradient-to-r from-purple-950 via-slate-900 to-indigo-950 text-white p-4 rounded-2xl border-2 border-purple-500/60 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-3">
@@ -667,8 +667,7 @@ function DashboardContent() {
               style={{ width: `${shareCapPercentage}%` }}
             />
           </div>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px] text-slate-400">
-            <span>Cumulative share income cap does NOT reset when advancing boards.</span>
+          <div className="flex items-center justify-end text-[11px] text-slate-400">
             <span className="font-bold text-slate-600">{shareCapPercentage.toFixed(1)}% Reached</span>
           </div>
         </div>
@@ -678,8 +677,7 @@ function DashboardContent() {
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h2 className="text-lg sm:text-xl font-bold text-slate-900">Income Accounting Breakdown</h2>
-            <p className="text-xs text-slate-500">Real-time on-chain revenue accounting &amp; direct withdrawal controls</p>
+            <h2 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">Income Accounting Breakdown</h2>
           </div>
 
           {totalUnclaimed > 0 && (
@@ -825,55 +823,40 @@ function DashboardContent() {
         </div>
       </div>
 
-      {/* 📜 OFFICIAL SMART CONTRACT ADDRESS CARD (AT VERY BOTTOM - MOBILE FRIENDLY WITH COPY) */}
-      <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
-          <div className="flex items-center gap-2">
-            <span className="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg text-base border border-emerald-200 shrink-0">
-              ⚡
-            </span>
-            <div>
-              <h4 className="text-xs sm:text-sm font-black text-slate-900">
-                Official Smart Contract Address
-              </h4>
-              <p className="text-[11px] text-slate-500">
-                Verified on BNB Smart Chain Mainnet (BEP-20)
-              </p>
-            </div>
-          </div>
-          <span className="self-start sm:self-auto px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-2xs whitespace-nowrap">
-            BSC Mainnet Verified 🛡️
-          </span>
+      {/* 📜 VERIFIED SMART CONTRACT ADDRESS CARD */}
+      <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm space-y-2.5">
+        <h4 className="text-xs sm:text-sm font-black text-slate-900">
+          Verified Smart Contract Address
+        </h4>
+
+        {/* 1-Line Smart Contract Address Box */}
+        <div className="w-full bg-slate-50 border border-slate-200 px-3.5 py-2.5 rounded-xl text-[11px] sm:text-xs font-mono font-bold text-slate-800 select-all whitespace-nowrap overflow-x-auto">
+          {CONTRACT_ADDRESSES.GROW50X_CORE}
         </div>
 
-        {/* Contract Address & Copy Button Row */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-0.5">
-          <div className="flex-1 bg-slate-50 border border-slate-200 px-3.5 py-2.5 rounded-xl text-xs font-mono font-bold text-slate-800 select-all break-all sm:truncate">
-            {CONTRACT_ADDRESSES.GROW50X_CORE}
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              onClick={handleCopyContract}
-              className={`flex-1 sm:flex-initial px-4 py-2.5 rounded-xl text-xs font-black transition-all shadow-xs flex items-center justify-center gap-1.5 active:scale-95 whitespace-nowrap ${
-                copiedContract
-                  ? 'bg-emerald-600 text-white shadow-emerald-500/20'
-                  : 'bg-slate-900 hover:bg-slate-800 text-white'
-              }`}
-            >
-              <span>{copiedContract ? '✓' : '📋'}</span>
-              <span>{copiedContract ? 'Copied!' : 'Copy Address'}</span>
-            </button>
-            <a
-              href={`${BSC_EXPLORER_URL}/address/${CONTRACT_ADDRESSES.GROW50X_CORE}`}
-              target="_blank"
-              rel="noreferrer"
-              className="px-3.5 py-2.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition-all flex items-center justify-center gap-1 shrink-0"
-              title="View on BSCScan Explorer"
-            >
-              <span>🔗</span>
-              <span className="hidden sm:inline">BSCScan</span>
-            </a>
-          </div>
+        {/* Copy Option Below Address */}
+        <div className="flex items-center gap-2 pt-0.5">
+          <button
+            onClick={handleCopyContract}
+            className={`px-4 py-2 rounded-xl text-xs font-black transition-all shadow-xs flex items-center justify-center gap-1.5 active:scale-95 ${
+              copiedContract
+                ? 'bg-emerald-600 text-white shadow-emerald-500/20'
+                : 'bg-slate-900 hover:bg-slate-800 text-white'
+            }`}
+          >
+            <span>{copiedContract ? '✓' : '📋'}</span>
+            <span>{copiedContract ? 'Copied!' : 'Copy Address'}</span>
+          </button>
+          <a
+            href={`${BSC_EXPLORER_URL}/address/${CONTRACT_ADDRESSES.GROW50X_CORE}`}
+            target="_blank"
+            rel="noreferrer"
+            className="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition-all flex items-center justify-center gap-1"
+            title="View on BSCScan Explorer"
+          >
+            <span>🔗</span>
+            <span>BSCScan</span>
+          </a>
         </div>
       </div>
 
