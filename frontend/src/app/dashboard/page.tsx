@@ -743,16 +743,11 @@ function DashboardContent() {
           </span>
         </div>
 
-        <div className="flex items-start gap-3 pt-1">
-          <span className="p-2.5 bg-white text-sky-600 rounded-2xl border border-sky-200 shadow-sm text-xl shrink-0">🔗</span>
-          <div>
-            <h3 className="text-base sm:text-lg font-black text-slate-900 leading-tight">
-              Direct Referral Link
-            </h3>
-            <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-              Share this unique link to sponsor direct members &amp; sub-ids directly under account <strong className="text-sky-700 font-extrabold">{displayId}</strong>.
-            </p>
-          </div>
+        <div className="flex items-center gap-2.5 pt-0.5">
+          <span className="p-2 bg-white text-sky-600 rounded-xl border border-sky-200 shadow-sm text-lg shrink-0">🔗</span>
+          <h3 className="text-base sm:text-lg font-black text-slate-900 leading-tight">
+            Direct Referral Link
+          </h3>
         </div>
 
         <div className="flex flex-col sm:flex-row items-center gap-2 pt-1">
@@ -825,9 +820,15 @@ function DashboardContent() {
 
       {/* 📜 VERIFIED SMART CONTRACT ADDRESS CARD */}
       <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm space-y-2.5">
-        <h4 className="text-xs sm:text-sm font-black text-slate-900">
-          Verified Smart Contract Address
-        </h4>
+        <div className="flex items-center gap-1.5">
+          <h4 className="text-xs sm:text-sm font-black text-slate-900">
+            Verified Smart Contract Address
+          </h4>
+          <svg className="w-4 h-4 text-emerald-500 fill-current shrink-0" viewBox="0 0 20 20" aria-label="Verified Contract">
+            <title>Verified Contract</title>
+            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+          </svg>
+        </div>
 
         {/* 1-Line Smart Contract Address Box */}
         <div className="w-full bg-slate-50 border border-slate-200 px-3.5 py-2.5 rounded-xl text-[11px] sm:text-xs font-mono font-bold text-slate-800 select-all whitespace-nowrap overflow-x-auto">
