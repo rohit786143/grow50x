@@ -30,6 +30,7 @@ interface UserRecord {
   active: boolean;
   createdAt: number;
   isSubId: boolean;
+  unclaimedIncome?: number;
 }
 
 interface MatrixPosition {
@@ -96,7 +97,7 @@ function AdminAnalyticsContent() {
 
   // User Search & Filtering State
   const [searchTerm, setSearchTerm] = useState<string>('');
-  const [userFilter, setUserFilter] = useState<'all' | 'main' | 'sub'>('all');
+  const [userFilter, setUserFilter] = useState<'all' | 'main' | 'sub' | 'unclaimed'>('all');
 
   // Board details state
   const [selectedBoardLevel, setSelectedBoardLevel] = useState<number>(1);
@@ -216,14 +217,31 @@ function AdminAnalyticsContent() {
             } catch (e) {}
           }
 
-          const fetchedUsers: UserRecord[] = [];
           let subCount = 0;
           let calculatedShares = 0;
           const shareWeights = [0, 1, 2, 5, 10, 25];
 
-          for (const uId of uniqueUserIds) {
+          const userPromises = Array.from(uniqueUserIds).map(async (uId) => {
             try {
               const u = await coreContract.users(uId);
+              let userUnclaimed = 0;
+              try {
+                const summary = await coreContract.getUserUnclaimedSummary(uId);
+                userUnclaimed = parseFloat(ethers.formatUnits(summary.totalUnclaimed || summary[4] || BigInt(0), 18));
+              } catch (e) {
+                try {
+                  const [d, l, b, s] = await Promise.all([
+                    coreContract.userUnclaimedDirectIncome(uId).catch(() => BigInt(0)),
+                    coreContract.userUnclaimedLevelIncome(uId).catch(() => BigInt(0)),
+                    coreContract.userUnclaimedBoardRewards(uId).catch(() => BigInt(0)),
+                    coreContract.userUnclaimedShareIncome(uId).catch(() => BigInt(0)),
+                  ]);
+                  userUnclaimed = parseFloat(ethers.formatUnits(BigInt(d) + BigInt(l) + BigInt(b) + BigInt(s), 18));
+                } catch {
+                  userUnclaimed = 0;
+                }
+              }
+
               const bLvl = Number(u.currentBoard) || 1;
               const userObj: UserRecord = {
                 id: Number(u.id),
@@ -236,14 +254,23 @@ function AdminAnalyticsContent() {
                 active: u.active,
                 createdAt: Number(u.createdAt),
                 isSubId: u.isSubId,
+                unclaimedIncome: userUnclaimed,
               };
-              if (u.isSubId) subCount++;
-              if (u.active) {
-                calculatedShares += (shareWeights[bLvl] || 1);
-              }
-              fetchedUsers.push(userObj);
-            } catch (err) {}
-          }
+              return userObj;
+            } catch (err) {
+              return null;
+            }
+          });
+
+          const fetchedUsersRaw = await Promise.all(userPromises);
+          const fetchedUsers = fetchedUsersRaw.filter((u): u is UserRecord => u !== null && u.id > 0);
+
+          fetchedUsers.forEach((u) => {
+            if (u.isSubId) subCount++;
+            if (u.active) {
+              calculatedShares += (shareWeights[u.currentBoard] || 1);
+            }
+          });
 
           setUsersList(fetchedUsers);
           setActiveSubIdsCount(subCount);
@@ -515,6 +542,7 @@ function AdminAnalyticsContent() {
     if (!matchesSearch) return false;
     if (userFilter === 'main') return !user.isSubId;
     if (userFilter === 'sub') return user.isSubId;
+    if (userFilter === 'unclaimed') return (user.unclaimedIncome || 0) > 0;
     return true;
   });
 
@@ -840,6 +868,30 @@ function AdminAnalyticsContent() {
             </p>
           </div>
 
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+            <div>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Accounts</span>
+              <p className="text-lg font-black text-slate-800">{usersList.length}</p>
+            </div>
+            <div>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Main IDs</span>
+              <p className="text-lg font-black text-emerald-600">{usersList.filter((u) => !u.isSubId).length}</p>
+            </div>
+            <div>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Sub-IDs</span>
+              <p className="text-lg font-black text-cyan-600">{usersList.filter((u) => u.isSubId).length}</p>
+            </div>
+            <div>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Unclaimed Across Users</span>
+              <p className="text-lg font-black text-emerald-600 font-mono">
+                ${usersList.reduce((acc, u) => acc + (u.unclaimedIncome || 0), 0).toFixed(2)}
+                <span className="text-[11px] font-semibold text-slate-400 ml-1">
+                  ({usersList.filter((u) => (u.unclaimedIncome || 0) > 0).length} users)
+                </span>
+              </p>
+            </div>
+          </div>
+
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
             <div className="w-full md:w-96 relative">
               <input
@@ -852,11 +904,11 @@ function AdminAnalyticsContent() {
               <span className="absolute left-3 top-2.5 text-slate-400 text-xs">🔍</span>
             </div>
 
-            <div className="flex items-center gap-2 w-full md:w-auto">
+            <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
               <button
                 onClick={() => setUserFilter('all')}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                  userFilter === 'all' ? 'bg-sky-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  userFilter === 'all' ? 'bg-sky-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
                 All Accounts ({usersList.length})
@@ -864,7 +916,7 @@ function AdminAnalyticsContent() {
               <button
                 onClick={() => setUserFilter('main')}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                  userFilter === 'main' ? 'bg-sky-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  userFilter === 'main' ? 'bg-sky-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
                 Main IDs Only ({usersList.filter((u) => !u.isSubId).length})
@@ -872,10 +924,20 @@ function AdminAnalyticsContent() {
               <button
                 onClick={() => setUserFilter('sub')}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                  userFilter === 'sub' ? 'bg-sky-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  userFilter === 'sub' ? 'bg-sky-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
                 Sub-IDs Only ({usersList.filter((u) => u.isSubId).length})
+              </button>
+              <button
+                onClick={() => setUserFilter('unclaimed')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  userFilter === 'unclaimed'
+                    ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-xs'
+                    : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200'
+                }`}
+              >
+                <span>💰</span> Unclaimed Income Only ({usersList.filter((u) => (u.unclaimedIncome || 0) > 0).length})
               </button>
             </div>
           </div>
@@ -893,6 +955,7 @@ function AdminAnalyticsContent() {
                       <th className="p-3 font-bold">Current Board</th>
                       <th className="p-3 font-bold">Directs</th>
                       <th className="p-3 font-bold">Status</th>
+                      <th className="p-3 font-bold">Unclaimed Income</th>
                       <th className="p-3 font-bold text-center">Actions & Inspect</th>
                     </tr>
                   </thead>
@@ -901,7 +964,7 @@ function AdminAnalyticsContent() {
                       <tr key={u.id} className="hover:bg-slate-50 transition-colors">
                         <td className="p-3">
                           <div className="font-bold text-slate-900 font-mono text-xs">{formatDisplayId(u.id)}</div>
-                          <div className="mt-0.5">
+                          <div className="mt-0.5 flex flex-wrap items-center gap-1">
                             {u.isSubId ? (
                               <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-cyan-100 text-cyan-700 border border-cyan-200 inline-block">
                                 Sub-ID
@@ -909,6 +972,11 @@ function AdminAnalyticsContent() {
                             ) : (
                               <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200 inline-block">
                                 Main ID
+                              </span>
+                            )}
+                            {(u.unclaimedIncome || 0) > 0 && (
+                              <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black bg-amber-100 text-amber-800 border border-amber-300 inline-flex items-center gap-0.5">
+                                <span>⚡</span>${(u.unclaimedIncome || 0).toFixed(2)}
                               </span>
                             )}
                           </div>
@@ -936,6 +1004,16 @@ function AdminAnalyticsContent() {
                             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">Active</span>
                           ) : (
                             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700">Inactive</span>
+                          )}
+                        </td>
+                        <td className="p-3 font-mono">
+                          {(u.unclaimedIncome || 0) > 0 ? (
+                            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-black bg-emerald-50 text-emerald-700 border border-emerald-300 shadow-xs">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                              <span>${(u.unclaimedIncome || 0).toFixed(2)} USDT</span>
+                            </div>
+                          ) : (
+                            <span className="text-slate-400 font-semibold text-xs">$0.00</span>
                           )}
                         </td>
                         <td className="p-3 text-center">
