@@ -106,6 +106,40 @@ function DashboardContent() {
   const [isFinalizing, setIsFinalizing] = useState<boolean>(false);
   const [actionMsg, setActionMsg] = useState<{ text: string; type: 'success' | 'error' | 'info' } | null>(null);
 
+  // Telegram Channel Join State & Modal Popup
+  const [showTelegramModal, setShowTelegramModal] = useState<boolean>(false);
+  const [hasJoinedTelegram, setHasJoinedTelegram] = useState<boolean>(true); // default true to avoid flash
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const joined = localStorage.getItem('grow50x_telegram_joined') === 'true';
+      setHasJoinedTelegram(joined);
+      if (!joined) {
+        // Small delay (800ms) for smooth entrance after dashboard loads
+        const timer = setTimeout(() => {
+          setShowTelegramModal(true);
+        }, 800);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, []);
+
+  const handleJoinTelegram = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('grow50x_telegram_joined', 'true');
+      setHasJoinedTelegram(true);
+      setShowTelegramModal(false);
+    }
+  };
+
+  const handleMarkTelegramJoined = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('grow50x_telegram_joined', 'true');
+      setHasJoinedTelegram(true);
+      setShowTelegramModal(false);
+    }
+  };
+
   const activeTargetId = ghostTargetId > 0 ? ghostTargetId : selectedUserId > 0 ? selectedUserId : mainUserId;
 
   useEffect(() => {
@@ -842,6 +876,134 @@ function DashboardContent() {
           </div>
         </div>
       </div>
+
+      {/* ✈️ OFFICIAL GROW 50X TELEGRAM CHANNEL BANNER (AT THE VERY BOTTOM - 100% MOBILE RESPONSIVE) */}
+      <div className="bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-700 text-white p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-lg shadow-sky-600/20 border border-sky-400/30 overflow-hidden relative">
+        {/* Subtle Ambient Background Watermark Icon */}
+        <div className="absolute -right-6 -bottom-6 w-36 h-36 opacity-10 pointer-events-none text-white">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.52 2.77-1.16 3.35-1.37 3.73-1.37.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z" />
+          </svg>
+        </div>
+
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 relative z-10">
+          <div className="flex items-start sm:items-center gap-3.5 min-w-0">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center shrink-0 shadow-inner">
+              <svg className="w-7 h-7 sm:w-8 sm:h-8 text-white filter drop-shadow" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.52 2.77-1.16 3.35-1.37 3.73-1.37.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z" />
+              </svg>
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="text-base sm:text-lg font-black tracking-tight text-white">
+                  Join Telegram Channel
+                </h3>
+                {hasJoinedTelegram ? (
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-400/20 text-emerald-200 border border-emerald-400/40">
+                    ✓ Joined
+                  </span>
+                ) : (
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-white/20 text-white border border-white/30 animate-pulse">
+                    Official Community
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-sky-100/90 font-medium mt-0.5 leading-relaxed max-w-xl">
+                Stay updated with real-time protocol news, board cycle notifications, and official announcements on our official channel.
+              </p>
+            </div>
+          </div>
+
+          <a
+            href="https://t.me/grow50x"
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={handleJoinTelegram}
+            className="w-full sm:w-auto px-5 py-3 rounded-xl bg-white hover:bg-sky-50 text-sky-700 hover:text-sky-800 font-black text-xs sm:text-sm transition-all shadow-md flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 shrink-0"
+          >
+            <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.52 2.77-1.16 3.35-1.37 3.73-1.37.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z" />
+            </svg>
+            <span>{hasJoinedTelegram ? 'Open Telegram Channel' : 'Join Telegram Channel'}</span>
+            <span className="text-xs">↗</span>
+          </a>
+        </div>
+      </div>
+
+      {/* 🚀 TELEGRAM JOIN POPUP MODAL (SHOWN ON LOGIN IF NOT JOINED) */}
+      {showTelegramModal && !hasJoinedTelegram && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md">
+          <div className="relative w-full max-w-md bg-white rounded-3xl p-6 sm:p-7 shadow-2xl border border-sky-200 overflow-hidden">
+            {/* Top Accent Gradient Bar */}
+            <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-sky-400 via-blue-500 to-indigo-600" />
+
+            {/* Close Button */}
+            <button
+              onClick={() => setShowTelegramModal(false)}
+              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-all text-xs font-bold z-10"
+              title="Close"
+            >
+              ✕
+            </button>
+
+            {/* Glowing Telegram Icon */}
+            <div className="relative mx-auto mb-4 w-16 h-16 flex items-center justify-center">
+              <div className="absolute inset-0 rounded-2xl bg-sky-400/30 blur-lg animate-pulse" />
+              <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-600 p-[2px] shadow-lg shadow-sky-500/30 flex items-center justify-center">
+                <div className="w-full h-full bg-sky-500 rounded-[14px] flex items-center justify-center text-white">
+                  <svg className="w-9 h-9 fill-current" viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.52 2.77-1.16 3.35-1.37 3.73-1.37.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Content */}
+            <div className="text-center space-y-2 mb-6">
+              <span className="px-3 py-1 rounded-full bg-sky-50 border border-sky-200 text-sky-700 text-[11px] font-black uppercase tracking-wider">
+                Official Protocol Channel
+              </span>
+              <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                Join GROW 50X Telegram
+              </h3>
+              <p className="text-xs text-slate-600 font-medium leading-relaxed max-w-xs mx-auto">
+                Connect with the official GROW 50X community. Get instant live announcements, board completions, and system updates!
+              </p>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="space-y-2.5">
+              <a
+                href="https://t.me/grow50x"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={handleJoinTelegram}
+                className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-extrabold text-sm transition-all shadow-lg shadow-sky-500/25 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95"
+              >
+                <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.52 2.77-1.16 3.35-1.37 3.73-1.37.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z" />
+                </svg>
+                <span>Join Telegram Channel</span>
+                <span className="text-xs">↗</span>
+              </a>
+
+              <button
+                type="button"
+                onClick={handleMarkTelegramJoined}
+                className="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors flex items-center justify-center gap-1.5"
+              >
+                <span>✓</span>
+                <span>I Have Already Joined</span>
+              </button>
+            </div>
+
+            {/* Footer Trust Note */}
+            <p className="text-[10px] text-center text-slate-400 mt-4">
+              Official Link: <span className="font-mono text-sky-600 font-bold">https://t.me/grow50x</span>
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
