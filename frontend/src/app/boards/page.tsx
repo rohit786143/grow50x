@@ -6,119 +6,6 @@ import { ethers } from 'ethers';
 import { CONTRACT_ADDRESSES, GROW50X_CORE_ABI } from '../../config/contracts';
 import { useWeb3 } from '../../context/Web3Context';
 
-// Helper function to discover all unique on-chain user IDs
-async function discoverAllUserIds(coreContract: any): Promise<number[]> {
-  const uniqueUserIds = new Set<number>();
-
-  // 1. Query UserRegistered events from smart contract
-  try {
-    const filter = coreContract.filters.UserRegistered();
-    const events = await coreContract.queryFilter(filter, 0, 'latest');
-    for (const ev of events) {
-      const uId = Number((ev as any).args?.id ?? (ev as any).args?.[0] ?? 0);
-      const sponsorId = Number((ev as any).args?.sponsorId ?? (ev as any).args?.[3] ?? 0);
-      if (uId > 0) uniqueUserIds.add(uId);
-      if (sponsorId > 0) uniqueUserIds.add(sponsorId);
-    }
-  } catch (e) {}
-
-  // 2. Scan active board units by level 1..5
-  try {
-    for (let level = 1; level <= 5; level++) {
-      try {
-        const boardIds = await coreContract.getActiveBoardUnitsByLevel(level);
-        for (const bIdBig of boardIds) {
-          const bId = Number(bIdBig);
-          if (bId > 0) {
-            try {
-              const positions = await coreContract.getBoardUnitPositions(bId);
-              positions.forEach((pIdBig: any) => {
-                const pId = Number(pIdBig);
-                if (pId > 0) uniqueUserIds.add(pId);
-              });
-            } catch (e) {}
-          }
-        }
-      } catch (e) {}
-    }
-  } catch (e) {}
-
-  // 3. Scan boards sequentially by counter
-  try {
-    const totalBoardsRaw = await coreContract.boardIdCounter();
-    const totalBoards = Number(totalBoardsRaw || 0);
-    for (let bLvl = 1; bLvl <= 5; bLvl++) {
-      const base = bLvl * 1000 + 1;
-      for (let bId = base; bId < base + totalBoards + 10; bId++) {
-        try {
-          const positionsRaw = await coreContract.getBoardUnitPositions(bId);
-          positionsRaw.forEach((pIdBig: any) => {
-            const pId = Number(pIdBig);
-            if (pId > 0) uniqueUserIds.add(pId);
-          });
-        } catch (e) {}
-      }
-    }
-  } catch (e) {}
-
-  // 4. For all discovered main IDs, discover owned sub-IDs
-  const existingIds = Array.from(uniqueUserIds);
-  for (const mId of existingIds) {
-    try {
-      const subIdsRaw = await coreContract.getOwnerSubIds(mId);
-      subIdsRaw.forEach((sIdBig: any) => {
-        const sId = Number(sIdBig);
-        if (sId > 0) uniqueUserIds.add(sId);
-      });
-    } catch (e) {}
-  }
-
-  return Array.from(uniqueUserIds);
-}
-
-async function buildDownlineCountsMap(coreContract: any): Promise<Map<number, number>> {
-  const downlineCounts = new Map<number, number>();
-  try {
-    const userIds = await discoverAllUserIds(coreContract);
-    const sponsorMap = new Map<number, number[]>();
-
-    for (const uId of userIds) {
-      try {
-        const u = await coreContract.users(uId);
-        const sponsor = Number(u[3] !== undefined ? u[3] : (u.sponsorId || 0));
-        if (sponsor > 0) {
-          if (!sponsorMap.has(sponsor)) sponsorMap.set(sponsor, []);
-          sponsorMap.get(sponsor)!.push(uId);
-        }
-      } catch (e) {}
-    }
-
-    for (const uId of userIds) {
-      let count = 0;
-      const queue: number[] = [uId];
-      const visited = new Set<number>();
-      visited.add(uId);
-
-      while (queue.length > 0) {
-        const curr = queue.shift()!;
-        const children = sponsorMap.get(curr) || [];
-        for (const child of children) {
-          if (!visited.has(child)) {
-            visited.add(child);
-            count++;
-            queue.push(child);
-          }
-        }
-      }
-
-      downlineCounts.set(uId, count);
-    }
-  } catch (e) {
-    console.warn('Error building downline counts map:', e);
-  }
-
-  return downlineCounts;
-}
 
 export default function BoardsPage() {
   return (
@@ -176,18 +63,26 @@ function BoardsContent() {
   };
 
   const loadUserBoardState = async () => {
-    if (typeof window === 'undefined' || !(window as any).ethereum) {
-      setIsLoading(false);
-      return;
-    }
-
     setIsLoading(true);
     try {
-      const provider = new ethers.BrowserProvider((window as any).ethereum);
       const coreAddress = CONTRACT_ADDRESSES.GROW50X_CORE;
       if (!coreAddress || coreAddress === '0x0000000000000000000000000000000000000000') {
         setIsLoading(false);
         return;
+      }
+
+      // Fast read-only RPC provider: direct HTTP connection avoids mobile in-app wallet JS bridge lag
+      let provider: ethers.Provider;
+      const rpcUrl = process.env.NEXT_PUBLIC_RPC_URL || 'https://bsc-dataseed.binance.org/';
+      try {
+        provider = new ethers.JsonRpcProvider(rpcUrl);
+      } catch {
+        if (typeof window !== 'undefined' && (window as any).ethereum) {
+          provider = new ethers.BrowserProvider((window as any).ethereum);
+        } else {
+          setIsLoading(false);
+          return;
+        }
       }
 
       const coreContract = new ethers.Contract(coreAddress, GROW50X_CORE_ABI, provider);
@@ -195,9 +90,10 @@ function BoardsContent() {
       // Resolve mainUserId from connected wallet if not set in context
       let resolvedMainUserId = mainUserId;
       let userAddr = account;
-      if (!userAddr) {
+      if (!userAddr && typeof window !== 'undefined' && (window as any).ethereum) {
         try {
-          const accs = await provider.send('eth_accounts', []);
+          const browserProv = new ethers.BrowserProvider((window as any).ethereum);
+          const accs = await browserProv.send('eth_accounts', []);
           if (accs.length > 0) userAddr = accs[0];
         } catch (e) {}
       }
@@ -221,96 +117,72 @@ function BoardsContent() {
         ? selectedUserId
         : resolvedMainUserId;
 
-      // Query user's current board level and active board unit ID from smart contract
-      let userLvl = 1;
-      let activeBoardId = 0;
-
-      if (activeTargetUserId > 0) {
-        try {
-          const uData = await coreContract.users(activeTargetUserId);
-          userLvl = Number(uData.currentBoard) || 1;
-          setUserCurrentBoard(userLvl);
-
-          const activeBIdRaw = await coreContract.userActiveBoardUnit(activeTargetUserId);
-          activeBoardId = Number(activeBIdRaw);
-          setUserActiveBoardId(activeBoardId);
-        } catch (e) {
-          console.error('Error fetching user board data:', e);
+      if (paramUserId) {
+        const parsedParam = parseInt(paramUserId.replace(/[^0-9]/g, ''));
+        if (parsedParam > 0) {
+          setInspectedUserId(parsedParam);
+          activeTargetUserId = parsedParam;
         }
+      } else {
+        setInspectedUserId(null);
       }
 
-      if (resolvedMainUserId > 0) {
-        try {
-          // Fetch user's owned Sub-IDs from smart contract
-          const subIdsRaw = await coreContract.ownerSubIds(resolvedMainUserId);
-          const accList: { id: number; label: string; isMain: boolean }[] = [
-            {
-              id: resolvedMainUserId,
-              label: `${formatDisplayId(resolvedMainUserId)} (Main ID ⭐)`,
-              isMain: true,
-            },
-          ];
+      // Step 1: Query user profile, active board unit, hold status & sub-IDs in 1 PARALLEL roundtrip
+      const [uData, activeBIdRaw, holdingRaw, holdingTargetRaw, subIdsRaw] = await Promise.all([
+        activeTargetUserId > 0 ? coreContract.users(activeTargetUserId).catch(() => null) : null,
+        activeTargetUserId > 0 ? coreContract.userActiveBoardUnit(activeTargetUserId).catch(() => 0) : 0,
+        activeTargetUserId > 0 ? coreContract.isHoldingForQualification(activeTargetUserId).catch(() => false) : false,
+        activeTargetUserId > 0 ? coreContract.holdingTargetLevel(activeTargetUserId).catch(() => 0) : 0,
+        resolvedMainUserId > 0 ? coreContract.ownerSubIds(resolvedMainUserId).catch(() => []) : [],
+      ]);
 
-          subIdsRaw.forEach((subIdBig: any, idx: number) => {
-            const sId = Number(subIdBig);
+      const userLvl = Number(uData?.currentBoard) || 1;
+      setUserCurrentBoard(userLvl);
+
+      const activeBoardId = Number(activeBIdRaw) || 0;
+      setUserActiveBoardId(activeBoardId);
+
+      // Populate Sub-IDs list
+      if (resolvedMainUserId > 0 && Array.isArray(subIdsRaw)) {
+        const accList: { id: number; label: string; isMain: boolean }[] = [
+          {
+            id: resolvedMainUserId,
+            label: `${formatDisplayId(resolvedMainUserId)} (Main ID ⭐)`,
+            isMain: true,
+          },
+        ];
+
+        subIdsRaw.forEach((subIdBig: any, idx: number) => {
+          const sId = Number(subIdBig);
+          if (sId > 0) {
             accList.push({
               id: sId,
               label: `${formatDisplayId(sId)} (Sub-ID #${idx + 1})`,
               isMain: false,
             });
-          });
-
-          setOwnedAccountsList(accList);
-        } catch (e) {
-          console.error('Error fetching user accounts state:', e);
-        }
-      }
-
-      // Handle query param for inspecting a specific user or board unit
-      let inspectedBId = 0;
-      let parsedParamUserId = paramUserId ? parseInt(paramUserId.replace(/[^0-9]/g, '')) : 0;
-      if (parsedParamUserId > 0) {
-        setInspectedUserId(parsedParamUserId);
-        activeTargetUserId = parsedParamUserId;
-      } else {
-        setInspectedUserId(null);
-      }
-
-      // Check hold/pending status for activeTargetUserId
-      let isOnHold = false;
-      let hDetails: any = null;
-      if (activeTargetUserId > 0) {
-        try {
-          const holding = await coreContract.isHoldingForQualification(activeTargetUserId);
-          if (holding) {
-            isOnHold = true;
-            let targetLvl = 2;
-            try {
-              const targetRaw = await coreContract.holdingTargetLevel(activeTargetUserId);
-              targetLvl = Number(targetRaw) || 2;
-            } catch (e) {}
-
-            let uData = { directCount: 0, currentBoard: 1 };
-            try {
-              uData = await coreContract.users(activeTargetUserId);
-            } catch (e) {}
-
-            const holdLevel = targetLvl > 1 ? targetLvl - 1 : (Number(uData.currentBoard) || 1);
-            const requiredDirects = holdLevel === 1 ? 2 : holdLevel === 2 ? 3 : holdLevel === 3 ? 4 : 5;
-            const currentDirects = Number(uData.directCount || 0);
-            const neededDirects = Math.max(0, requiredDirects - currentDirects);
-
-            hDetails = {
-              targetLevel: targetLvl,
-              holdLevel,
-              requiredDirects,
-              currentDirects,
-              neededDirects,
-            };
           }
-        } catch (e) {
-          console.error('Error checking hold status:', e);
-        }
+        });
+
+        setOwnedAccountsList(accList);
+      }
+
+      // Check hold/pending status
+      const isOnHold = Boolean(holdingRaw);
+      let hDetails: any = null;
+      if (isOnHold) {
+        const targetLvl = Number(holdingTargetRaw) || (userLvl + 1);
+        const holdLevel = targetLvl > 1 ? targetLvl - 1 : userLvl;
+        const requiredDirects = holdLevel === 1 ? 2 : holdLevel === 2 ? 3 : holdLevel === 3 ? 4 : 5;
+        const currentDirects = Number(uData?.directCount || 0);
+        const neededDirects = Math.max(0, requiredDirects - currentDirects);
+
+        hDetails = {
+          targetLevel: targetLvl,
+          holdLevel,
+          requiredDirects,
+          currentDirects,
+          neededDirects,
+        };
       }
 
       setIsUserOnHold(isOnHold);
@@ -318,85 +190,52 @@ function BoardsContent() {
 
       const activeLvl = selectedBoardLevel || userLvl;
 
-      // Query active open board unit (filled < 7) for target user ID
-      if (activeTargetUserId > 0) {
-        try {
-          const totalBoardsCountRaw = await coreContract.boardIdCounter();
-          const totalBoards = Number(totalBoardsCountRaw);
-          const base = activeLvl * 1000 + 1;
-          let foundActiveUnit = 0;
-
-          // Scan active board units backwards to find open board (filled < 7) containing the user
-          for (let checkId = base + totalBoards + 5; checkId >= base; checkId--) {
-            try {
-              const pos = await coreContract.getBoardUnitPositions(checkId);
-              let filled = 0;
-              let userInUnit = false;
-              for (let pIdx = 0; pIdx < pos.length; pIdx++) {
-                const pId = Number(pos[pIdx]);
-                if (pId > 0) filled++;
-                if (pId === activeTargetUserId) userInUnit = true;
-              }
-              if (userInUnit && filled < 7) {
-                foundActiveUnit = checkId;
-                break;
-              }
-            } catch (e) {}
-          }
-
-          if (foundActiveUnit > 0) {
-            inspectedBId = foundActiveUnit;
-          } else {
-            const targetActiveBId = await coreContract.userActiveBoardUnit(activeTargetUserId);
-            const rawBId = Number(targetActiveBId);
-            if (rawBId > 0) {
-              try {
-                const pos = await coreContract.getBoardUnitPositions(rawBId);
-                let filled = 0;
-                pos.forEach((pId: any) => { if (Number(pId) > 0) filled++; });
-                if (filled < 7) {
-                  inspectedBId = rawBId;
-                }
-              } catch (e) {
-                inspectedBId = rawBId;
-              }
-            }
-          }
-        } catch (e) {}
-      }
-
-      if (paramUnitId) {
-        inspectedBId = parseInt(paramUnitId);
-      }
-
-      // Select target board: Manual board override > Target User Active Open Board > Fallback Open Board
+      // Step 2: Determine Target Board ID via Direct Smart Contract Mapping (No slow loops)
       let bId = targetBoardId;
       if (!bId) {
-        if (inspectedBId > 0) {
-          bId = inspectedBId;
-        } else if (activeBoardId > 0) {
+        if (paramUnitId) {
+          bId = parseInt(paramUnitId);
+        } else if (activeBoardId > 0 && (selectedBoardLevel === 0 || selectedBoardLevel === userLvl)) {
           bId = activeBoardId;
         } else {
-          bId = activeLvl * 1000 + 1;
+          // If a different level is chosen, fetch active board directly from contract
+          try {
+            const activeIds = await coreContract.getActiveBoardUnitsByLevel(activeLvl);
+            if (activeIds && activeIds.length > 0) {
+              bId = Number(activeIds[activeIds.length - 1]);
+            }
+          } catch (e) {}
+
+          if (!bId) {
+            bId = activeLvl * 1000 + 1;
+          }
         }
       }
 
+      // Step 3: Fetch Board Unit Positions in 1 call
       let positionsRaw = [0, 0, 0, 0, 0, 0, 0];
       try {
-        const res = await coreContract.getBoardUnitPositions(bId);
-        positionsRaw = res;
+        positionsRaw = await coreContract.getBoardUnitPositions(bId);
       } catch (e) {
+        console.error('Error fetching board positions for unit', bId, e);
         positionsRaw = [0, 0, 0, 0, 0, 0, 0];
       }
 
       const topUserIdRaw = Number(positionsRaw[0]);
-      let topOnHold = false;
-      if (topUserIdRaw > 0) {
-        try {
-          topOnHold = await coreContract.isHoldingForQualification(topUserIdRaw);
-        } catch (e) {}
-      }
-      setIsTopNodeOnHold(topOnHold);
+
+      // Step 4: Parallel fetch for top node qualification and all 7 positions profiles
+      const [topOnHold, ...usersProfiles] = await Promise.all([
+        topUserIdRaw > 0 ? coreContract.isHoldingForQualification(topUserIdRaw).catch(() => false) : false,
+        ...positionsRaw.map((posIdBig: any) => {
+          const pId = Number(posIdBig);
+          if (pId > 0) {
+            return coreContract.users(pId).catch(() => null);
+          }
+          return Promise.resolve(null);
+        }),
+      ]);
+
+      setIsTopNodeOnHold(Boolean(topOnHold));
 
       const labels = [
         'TOP (Position 1)',
@@ -408,50 +247,44 @@ function BoardsContent() {
         'Bottom Right 2 (Position 7)',
       ];
 
-      const downlineMap = await buildDownlineCountsMap(coreContract);
-
       let filled = 0;
-      const parsedPositions = await Promise.all(
-        positionsRaw.map(async (posIdBig: any, idx: number) => {
-          const pId = Number(posIdBig);
-          if (pId > 0) {
-            filled++;
-            let uData = { wallet: '0x0000...0000', sponsorId: 0, directCount: 0, isSubId: false };
-            try {
-              uData = await coreContract.users(pId);
-            } catch (e) {}
+      const parsedPositions = positionsRaw.map((posIdBig: any, idx: number) => {
+        const pId = Number(posIdBig);
+        const uProfile = usersProfiles[idx];
 
-            const dlCount = downlineMap.get(pId) || 0;
+        if (pId > 0) {
+          filled++;
+          const walletAddr = uProfile?.wallet || '0x0000000000000000000000000000000000000000';
+          const shortWallet = walletAddr.length > 10
+            ? `${walletAddr.substring(0, 6)}...${walletAddr.substring(walletAddr.length - 4)}`
+            : '0x00...00';
+          const sponsorIdNum = Number(uProfile?.sponsorId || 0);
 
-            return {
-              pos: idx + 1,
-              label: labels[idx],
-              id: formatDisplayId(pId),
-              wallet: uData.wallet ? `${uData.wallet.substring(0, 6)}...${uData.wallet.substring(uData.wallet.length - 4)}` : '0x00...00',
-              fullWallet: uData.wallet,
-              sponsor: Number(uData.sponsorId) > 0 ? formatDisplayId(Number(uData.sponsorId)) : 'Root',
-              directs: Number(uData.directCount || 0),
-              downline: dlCount,
-              isSubId: uData.isSubId || false,
-              status: 'Occupied',
-            };
-          }
           return {
             pos: idx + 1,
             label: labels[idx],
-            id: null,
-            wallet: null,
-            sponsor: null,
-            directs: 0,
-            downline: 0,
-            isSubId: false,
-            status: 'Available',
+            id: formatDisplayId(pId),
+            wallet: shortWallet,
+            fullWallet: walletAddr,
+            sponsor: sponsorIdNum > 0 ? formatDisplayId(sponsorIdNum) : 'Root',
+            directs: Number(uProfile?.directCount || 0),
+            isSubId: Boolean(uProfile?.isSubId),
+            status: 'Occupied',
           };
-        })
-      );
+        }
 
+        return {
+          pos: idx + 1,
+          label: labels[idx],
+          id: null,
+          wallet: null,
+          sponsor: null,
+          directs: 0,
+          isSubId: false,
+          status: 'Available',
+        };
+      });
 
-      // Compute board level dynamically from unit ID (e.g., 2001 => Level 2, 1001 => Level 1)
       const computedBoardLevel = bId >= 1000 ? Math.floor(bId / 1000) : activeLvl;
 
       setBoardUnit({
@@ -790,7 +623,7 @@ function MatrixNode({ item, isTop = false }: { item: any; isTop?: boolean }) {
               {item.directs} Directs
             </span>
             <span className="px-2 py-0.5 text-[9px] sm:text-[10px] font-extrabold bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-full whitespace-nowrap">
-              {item.downline || 0} Downline
+              Ref: {item.sponsor || 'Root'}
             </span>
           </div>
         </>
