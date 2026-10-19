@@ -5,97 +5,16 @@ import { useRouter } from 'next/navigation';
 import { ethers } from 'ethers';
 import { CONTRACT_ADDRESSES, GROW50X_CORE_ABI } from '../../../config/contracts';
 import { useWeb3 } from '../../../context/Web3Context';
+import { fetchProtocolUsers, getDownlineMembers, formatDisplayId, DownlineMemberItem } from '../../../utils/teamData';
 
-interface DownlineMember {
-  rawId: number;
-  id: string;
-  wallet: string;
-  board: number;
-  directs: number;
-  isSubId: boolean;
-  date: string;
-  sponsorId: number;
-  sponsorDisplayId: string;
-  level: number;
-}
-
-// Helper function to discover all unique on-chain user IDs
-async function discoverAllUserIds(coreContract: any): Promise<number[]> {
-  const uniqueUserIds = new Set<number>();
-
-  // 1. Query UserRegistered events from smart contract
-  try {
-    const filter = coreContract.filters.UserRegistered();
-    const events = await coreContract.queryFilter(filter, 0, 'latest');
-    for (const ev of events) {
-      const uId = Number((ev as any).args?.id ?? (ev as any).args?.[0] ?? 0);
-      const sponsorId = Number((ev as any).args?.sponsorId ?? (ev as any).args?.[3] ?? 0);
-      if (uId > 0) uniqueUserIds.add(uId);
-      if (sponsorId > 0) uniqueUserIds.add(sponsorId);
-    }
-  } catch (e) {
-    console.warn('UserRegistered event filter error, falling back to board scan:', e);
-  }
-
-  // 2. Scan active board units by level 1..5
-  try {
-    for (let level = 1; level <= 5; level++) {
-      try {
-        const boardIds = await coreContract.getActiveBoardUnitsByLevel(level);
-        for (const bIdBig of boardIds) {
-          const bId = Number(bIdBig);
-          if (bId > 0) {
-            try {
-              const positions = await coreContract.getBoardUnitPositions(bId);
-              positions.forEach((pIdBig: any) => {
-                const pId = Number(pIdBig);
-                if (pId > 0) uniqueUserIds.add(pId);
-              });
-            } catch (e) {}
-          }
-        }
-      } catch (e) {}
-    }
-  } catch (e) {}
-
-  // 3. Scan boards sequentially by counter
-  try {
-    const totalBoardsRaw = await coreContract.boardIdCounter();
-    const totalBoards = Number(totalBoardsRaw || 0);
-    for (let bLvl = 1; bLvl <= 5; bLvl++) {
-      const base = bLvl * 1000 + 1;
-      for (let bId = base; bId < base + totalBoards + 10; bId++) {
-        try {
-          const positionsRaw = await coreContract.getBoardUnitPositions(bId);
-          positionsRaw.forEach((pIdBig: any) => {
-            const pId = Number(pIdBig);
-            if (pId > 0) uniqueUserIds.add(pId);
-          });
-        } catch (e) {}
-      }
-    }
-  } catch (e) {}
-
-  // 4. For all discovered main IDs, discover owned sub-IDs
-  const existingIds = Array.from(uniqueUserIds);
-  for (const mId of existingIds) {
-    try {
-      const subIdsRaw = await coreContract.getOwnerSubIds(mId);
-      subIdsRaw.forEach((sIdBig: any) => {
-        const sId = Number(sIdBig);
-        if (sId > 0) uniqueUserIds.add(sId);
-      });
-    } catch (e) {}
-  }
-
-  return Array.from(uniqueUserIds);
-}
+type DownlineMember = DownlineMemberItem;
 
 export default function MyDownlinePage() {
   const router = useRouter();
   const { account, mainUserId, selectedUserId } = useWeb3();
   const [downlineList, setDownlineList] = useState<DownlineMember[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [filterType, setFilterType] = useState<'all' | 'main' | 'sub'>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
 
@@ -103,106 +22,42 @@ export default function MyDownlinePage() {
 
   useEffect(() => {
     if (activeTargetId > 0 || account) {
-      loadDownline(activeTargetId);
+      loadDownline(activeTargetId, false);
     } else {
       setLoading(false);
     }
   }, [account, mainUserId, selectedUserId, activeTargetId]);
 
-  const formatDisplayId = (id: number) => {
-    if (!id || id <= 0) return '';
-    return `GR${id.toString().padStart(6, '0')}`;
-  };
+  const loadDownline = async (targetId: number, forceRefresh = false) => {
+    if (forceRefresh) {
+      setIsRefreshing(true);
+    } else {
+      setLoading(true);
+    }
 
-  const loadDownline = async (targetId: number) => {
-    setLoading(true);
     try {
-      let provider: any = null;
-      if (typeof window !== 'undefined' && (window as any).ethereum) {
-        provider = new ethers.BrowserProvider((window as any).ethereum);
-      } else {
-        const rpcUrl = process.env.NEXT_PUBLIC_RPC_URL || 'https://bsc-dataseed.binance.org/';
-        provider = new ethers.JsonRpcProvider(rpcUrl);
-      }
-
-      const coreContract = new ethers.Contract(CONTRACT_ADDRESSES.GROW50X_CORE, GROW50X_CORE_ABI, provider);
+      const rpcUrl = process.env.NEXT_PUBLIC_RPC_URL || 'https://bsc-dataseed.binance.org/';
+      const fastProvider = new ethers.JsonRpcProvider(rpcUrl);
 
       let resolvedId = targetId;
       if (resolvedId === 0 && account) {
         try {
+          const coreContract = new ethers.Contract(CONTRACT_ADDRESSES.GROW50X_CORE, GROW50X_CORE_ABI, fastProvider);
           const mIdRaw = await coreContract.walletToMainUserId(account);
           resolvedId = Number(mIdRaw);
         } catch (e) {}
       }
 
       if (resolvedId > 0) {
-        const discoveredIds = await discoverAllUserIds(coreContract);
-        const userIds = Array.from(new Set([resolvedId, ...discoveredIds]));
-
-        // Build sponsor mapping: sponsorId -> user list
-        const sponsorMap = new Map<number, any[]>();
-        for (const i of userIds) {
-          try {
-            const u = await coreContract.users(i);
-            const sponsor = Number(u[3] !== undefined ? u[3] : (u.sponsorId || 0));
-            const walletAddr = String(u[1] !== undefined ? u[1] : (u.wallet || '0x0000...0000'));
-            const currentBoardLevel = Number(u[5] !== undefined ? u[5] : (u.currentBoard || 1));
-            const directCountVal = Number(u[6] !== undefined ? u[6] : (u.directCount || 0));
-            const createdAtTs = Number(u[8] !== undefined ? u[8] : (u.createdAt || Date.now() / 1000));
-            const isSubIdVal = Boolean(u[9] !== undefined ? u[9] : u.isSubId);
-
-            const userData = {
-              rawId: i,
-              id: formatDisplayId(i),
-              wallet: walletAddr,
-              board: currentBoardLevel,
-              directs: directCountVal,
-              isSubId: isSubIdVal,
-              date: new Date(createdAtTs * 1000).toLocaleDateString(),
-              sponsorId: sponsor,
-              sponsorDisplayId: sponsor > 0 ? formatDisplayId(sponsor) : 'Root',
-            };
-
-            if (!sponsorMap.has(sponsor)) {
-              sponsorMap.set(sponsor, []);
-            }
-            sponsorMap.get(sponsor)!.push(userData);
-          } catch (e) {
-            console.warn(`Could not read user ${i}:`, e);
-          }
-        }
-
-        // BFS traversal for full recursive downline
-        const downline: DownlineMember[] = [];
-        const queue: { id: number; level: number }[] = [{ id: resolvedId, level: 0 }];
-        const visited = new Set<number>();
-        visited.add(resolvedId);
-
-        while (queue.length > 0) {
-          const curr = queue.shift()!;
-          const children = sponsorMap.get(curr.id) || [];
-
-          for (const child of children) {
-            if (!visited.has(child.rawId)) {
-              visited.add(child.rawId);
-              const childLevel = curr.level + 1;
-
-              downline.push({
-                ...child,
-                level: childLevel,
-              });
-
-              queue.push({ id: child.rawId, level: childLevel });
-            }
-          }
-        }
-
+        const allUsers = await fetchProtocolUsers(fastProvider, forceRefresh);
+        const downline = getDownlineMembers(resolvedId, allUsers);
         setDownlineList(downline);
       }
     } catch (err) {
       console.error('Error loading downline tree:', err);
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
   };
 
@@ -263,6 +118,15 @@ export default function MyDownlinePage() {
             }`}
           >
             Sub-IDs ({subCount})
+          </button>
+          <button
+            onClick={() => loadDownline(activeTargetId, true)}
+            disabled={isRefreshing}
+            className="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-white hover:bg-slate-200 text-slate-700 border border-slate-300 transition-all flex items-center gap-1 shadow-2xs"
+            title="Refresh Downline Data"
+          >
+            <span className={isRefreshing ? 'animate-spin' : ''}>🔄</span>
+            <span className="hidden sm:inline">{isRefreshing ? 'Syncing...' : 'Refresh'}</span>
           </button>
         </div>
       </div>

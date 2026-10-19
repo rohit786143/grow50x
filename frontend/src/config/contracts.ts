@@ -83,6 +83,8 @@ export const GROW50X_CORE_ABI = [
   "event AutoTransferDirectToggled(bool enabled)",
   "event DirectCommissionPaid(uint256 indexed sponsorId, address indexed sponsorWallet, uint256 amount)",
   "event DirectCommissionClaimed(uint256 indexed mainUserId, address indexed wallet, uint256 amount)",
+  "event LevelIncomeAccrued(uint256 indexed beneficiaryMainUserId, uint256 indexed sourceId, uint8 level, uint256 amount, uint256 timestamp)",
+  "event LevelIncomePaid(uint256 indexed beneficiaryMainUserId, address indexed wallet, uint256 sourceId, uint8 level, uint256 amount)",
   "event LevelIncomeClaimed(uint256 indexed mainUserId, address indexed wallet, uint256 amount)",
   "event BoardRewardClaimed(uint256 indexed mainUserId, address indexed wallet, uint256 amount)",
   "event BoardRewardQueued(uint256 indexed userId, uint256 amount, uint256 timestamp)",

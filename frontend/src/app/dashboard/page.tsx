@@ -1,11 +1,13 @@
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
+import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { ethers } from 'ethers';
 import { CONTRACT_ADDRESSES, GROW50X_CORE_ABI, BSC_EXPLORER_URL, isAdminWallet, getAdminIndex } from '../../config/contracts';
 import PlanPresentation from '../../components/PlanPresentation';
 import { useWeb3 } from '../../context/Web3Context';
+import { fetchProtocolUsers, calculateSubIdLevelIncomeBreakdown, LevelIncomeSummary } from '../../utils/teamData';
 
 
 // Helper function to calculate exact next calendar cutoff date (5th, 15th, or 25th of the month according to Dubai GST UTC+4)
@@ -67,6 +69,7 @@ function DashboardContent() {
   const [boardRewards, setBoardRewards] = useState<number>(0);
   const [lifetimeShareEarned, setLifetimeShareEarned] = useState<number>(0);
   const [currentBoardCap, setCurrentBoardCap] = useState<number>(200);
+  const [subIdLevelSummary, setSubIdLevelSummary] = useState<LevelIncomeSummary | null>(null);
 
   // Unclaimed Income States for Direct Claim Buttons
   const [unclaimedDirect, setUnclaimedDirect] = useState<number>(0);
@@ -247,6 +250,15 @@ function DashboardContent() {
       setLevelIncome(rawLevel);
       setBoardRewards(rawBoardRewards);
       setLifetimeShareEarned(rawLifetimeShare);
+
+      // Compute Sub-ID Level Breakdown (3%, 2%, 1%)
+      try {
+        const allUsers = await fetchProtocolUsers(provider);
+        const lSummary = calculateSubIdLevelIncomeBreakdown(numericMainId, allUsers);
+        setSubIdLevelSummary(lSummary);
+      } catch (e) {
+        console.warn('Could not calculate subIdLevelSummary:', e);
+      }
 
       // Fetch Unclaimed Ledgers Summary
       try {
@@ -708,12 +720,42 @@ function DashboardContent() {
             </p>
           </div>
 
-          {/* Card 3: Sub-ID Level Income */}
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm border-l-4 border-l-indigo-500">
-            <span className="text-xs text-slate-500 uppercase font-semibold">Sub-ID Level Income</span>
-            <p className="text-2xl font-black text-indigo-600 mt-2">
-              ${levelIncome.toFixed(2)} <span className="text-xs font-normal text-slate-400">USDT</span>
-            </p>
+          {/* Card 3: Sub-ID Level Income with 3%, 2%, 1% Mini Breakdown & Link */}
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm border-l-4 border-l-indigo-500 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-slate-500 uppercase font-semibold">Sub-ID Level Income</span>
+                <span className="text-[10px] font-extrabold bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full border border-indigo-200">
+                  3% • 2% • 1%
+                </span>
+              </div>
+              <p className="text-2xl font-black text-indigo-600 mt-1.5">
+                ${levelIncome.toFixed(2)} <span className="text-xs font-normal text-slate-400">USDT</span>
+              </p>
+
+              {/* Mini Level Breakdown Chips */}
+              <div className="grid grid-cols-3 gap-1.5 mt-3 pt-2.5 border-t border-slate-100 text-[11px]">
+                <div className="bg-emerald-50 text-emerald-800 p-1.5 rounded-lg text-center border border-emerald-100">
+                  <div className="text-[9px] uppercase font-bold text-emerald-600">L1 (3%)</div>
+                  <strong className="font-mono text-xs">${(subIdLevelSummary?.level1Total || 0).toFixed(0)}</strong>
+                </div>
+                <div className="bg-sky-50 text-sky-800 p-1.5 rounded-lg text-center border border-sky-100">
+                  <div className="text-[9px] uppercase font-bold text-sky-600">L2 (2%)</div>
+                  <strong className="font-mono text-xs">${(subIdLevelSummary?.level2Total || 0).toFixed(0)}</strong>
+                </div>
+                <div className="bg-purple-50 text-purple-800 p-1.5 rounded-lg text-center border border-purple-100">
+                  <div className="text-[9px] uppercase font-bold text-purple-600">L3 (1%)</div>
+                  <strong className="font-mono text-xs">${(subIdLevelSummary?.level3Total || 0).toFixed(0)}</strong>
+                </div>
+              </div>
+            </div>
+
+            <Link
+              href="/transactions?view=income&tab=level"
+              className="mt-3.5 inline-flex items-center justify-center gap-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 py-2 px-3 rounded-xl border border-indigo-100 transition-colors w-full"
+            >
+              <span>🔍</span> View ID-wise Details ({subIdLevelSummary?.totalRecords || 0}) &rarr;
+            </Link>
           </div>
 
           {/* Card 4: Board Completion Rewards */}
