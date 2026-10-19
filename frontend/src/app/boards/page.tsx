@@ -22,7 +22,7 @@ function BoardsContent() {
   const paramUnitId = searchParams.get('unitId') || searchParams.get('unit');
 
   const { account, mainUserId, selectedUserId, setSelectedUserId } = useWeb3();
-  const [selectedBoardLevel, setSelectedBoardLevel] = useState<number>(1);
+  const [selectedBoardLevel, setSelectedBoardLevel] = useState<number>(0);
   const [targetBoardId, setTargetBoardId] = useState<number | null>(null);
   const [ownedAccountsList, setOwnedAccountsList] = useState<{ id: number; label: string; isMain: boolean }[]>([]);
   const [selectedAccountId, setSelectedAccountId] = useState<number>(0);
@@ -188,26 +188,52 @@ function BoardsContent() {
       setIsUserOnHold(isOnHold);
       setHoldDetails(hDetails);
 
-      const activeLvl = selectedBoardLevel || userLvl;
+      const effectiveLvl = selectedBoardLevel > 0 ? selectedBoardLevel : userLvl;
 
-      // Step 2: Determine Target Board ID via Direct Smart Contract Mapping (No slow loops)
+      // Step 2: Determine Target Board ID
       let bId = targetBoardId;
       if (!bId) {
         if (paramUnitId) {
           bId = parseInt(paramUnitId);
-        } else if (activeBoardId > 0 && (selectedBoardLevel === 0 || selectedBoardLevel === userLvl)) {
+        } else if (effectiveLvl === userLvl && activeBoardId > 0) {
+          // By default, view user's active board directly
           bId = activeBoardId;
         } else {
-          // If a different level is chosen, fetch active board directly from contract
+          // If a different level was selected (e.g. past completed board):
+          // Find the board unit for this level that contains the target user
+          let foundUnit = 0;
           try {
-            const activeIds = await coreContract.getActiveBoardUnitsByLevel(activeLvl);
-            if (activeIds && activeIds.length > 0) {
-              bId = Number(activeIds[activeIds.length - 1]);
+            const totalBoardsRaw = await coreContract.boardIdCounter();
+            const total = Number(totalBoardsRaw);
+            const base = effectiveLvl * 1000 + 1;
+            for (let checkId = base + total; checkId >= base; checkId--) {
+              try {
+                const pos = await coreContract.getBoardUnitPositions(checkId);
+                for (let p of pos) {
+                  if (Number(p) === activeTargetUserId) {
+                    foundUnit = checkId;
+                    break;
+                  }
+                }
+                if (foundUnit > 0) break;
+              } catch (e) {}
             }
           } catch (e) {}
 
-          if (!bId) {
-            bId = activeLvl * 1000 + 1;
+          if (foundUnit > 0) {
+            bId = foundUnit;
+          } else {
+            // Fallback to active board of this level
+            try {
+              const activeIds = await coreContract.getActiveBoardUnitsByLevel(effectiveLvl);
+              if (activeIds && activeIds.length > 0) {
+                bId = Number(activeIds[activeIds.length - 1]);
+              }
+            } catch (e) {}
+
+            if (!bId) {
+              bId = effectiveLvl * 1000 + 1;
+            }
           }
         }
       }
@@ -285,7 +311,7 @@ function BoardsContent() {
         };
       });
 
-      const computedBoardLevel = bId >= 1000 ? Math.floor(bId / 1000) : activeLvl;
+      const computedBoardLevel = bId >= 1000 ? Math.floor(bId / 1000) : effectiveLvl;
 
       setBoardUnit({
         boardId: bId,
@@ -303,7 +329,8 @@ function BoardsContent() {
   const handleAccountChange = async (targetId: number) => {
     setSelectedAccountId(targetId);
     setSelectedUserId(targetId);
-    setTargetBoardId(null); // Reset manual board override so loadUserBoardState queries active open board unit of targetId
+    setSelectedBoardLevel(0); // Reset to auto so it loads that ID's active board
+    setTargetBoardId(null);
     setShowCompletedTreeAnyway(false);
     if (typeof window !== 'undefined') {
       window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
@@ -359,8 +386,77 @@ function BoardsContent() {
           </button>
         </div>
       )}
+      {/* 👤 Owned Account Selector (Main ID vs Sub-IDs) */}
+      {ownedAccountsList.length > 1 && (
+        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <span className="text-xl">👤</span>
+            <div>
+              <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">
+                Matrix Account Switcher
+              </span>
+              <span className="text-xs font-black text-slate-800">
+                Viewing Tree for: <span className="font-mono text-amber-600 font-extrabold">{formatDisplayId(activeUserIdForRender)}</span>
+              </span>
+            </div>
+          </div>
+          <select
+            value={selectedAccountId || mainUserId}
+            onChange={(e) => handleAccountChange(Number(e.target.value))}
+            className="w-full sm:w-auto px-4 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-300 rounded-xl text-xs font-bold text-slate-800 transition-all focus:outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer"
+          >
+            {ownedAccountsList.map((acc) => (
+              <option key={acc.id} value={acc.id}>
+                {acc.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
+      {/* 📊 5-Board Level Switcher Tabs */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+        {[1, 2, 3, 4, 5].map((lvl) => {
+          const isUserActiveLevel = lvl === userCurrentBoard;
+          const isCompleted = lvl < userCurrentBoard;
+          const isCurrentSelected = (selectedBoardLevel === 0 && isUserActiveLevel) || selectedBoardLevel === lvl;
+          const isLocked = lvl > userCurrentBoard;
 
+          const levelIcons = ['⭐', '🥉', '🥈', '🥇', '💎'];
+
+          return (
+            <button
+              key={lvl}
+              disabled={isLocked}
+              onClick={() => {
+                setSelectedBoardLevel(lvl);
+                setTargetBoardId(null);
+                setShowCompletedTreeAnyway(false);
+              }}
+              className={`px-3.5 sm:px-4 py-2.5 rounded-2xl font-black text-xs transition-all whitespace-nowrap flex items-center gap-1.5 border shadow-2xs ${
+                isCurrentSelected
+                  ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 border-amber-400 shadow-md shadow-amber-500/20 ring-2 ring-amber-400/40'
+                  : isLocked
+                  ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-50'
+                  : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200'
+              }`}
+            >
+              <span>{levelIcons[lvl - 1]}</span>
+              <span>Board {lvl}</span>
+              {isUserActiveLevel && (
+                <span className="px-1.5 py-0.5 text-[9px] font-black uppercase rounded-full bg-slate-950 text-amber-300 ml-1">
+                  Active
+                </span>
+              )}
+              {isCompleted && (
+                <span className="px-1.5 py-0.5 text-[9px] font-bold rounded-full bg-emerald-100 text-emerald-800 ml-1">
+                  Done ✓
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
 
       {/* 🧩 DIRECT USER BOARD MATRIX visualizer OR HOLD STATUS CARD */}
       <div className="bg-white p-6 lg:p-8 rounded-3xl border border-slate-200 shadow-sm flex flex-col items-center justify-center min-h-[480px]">
